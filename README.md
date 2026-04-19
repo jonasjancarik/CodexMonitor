@@ -221,6 +221,21 @@ npm run tauri:build
 
 Artifacts will be in `src-tauri/target/release/bundle/` (platform-specific subfolders).
 
+### Linux Fork Release (AppImage + updater)
+
+This fork ships Linux AppImage releases and updater metadata from GitHub Releases on
+`jonasjancarik/CodexMonitor`.
+
+- Trigger workflow: `Linux Release`
+- Output artifacts: `*.AppImage`, `*.AppImage.sig`, `latest.json`, `SHA256SUMS.txt`
+- Required repo secret: `TAURI_SIGNING_PRIVATE_KEY_B64`
+
+The updater feed for this branch points at:
+
+```text
+https://github.com/jonasjancarik/CodexMonitor/releases/latest/download/latest.json
+```
+
 ### Windows (opt-in)
 
 Windows builds are opt-in and use a separate Tauri config file to avoid macOS-only window effects.

@@ -11,6 +11,12 @@ import {
   SettingsToggleRow,
   SettingsToggleSwitch,
 } from "@/features/design-system/components/settings/SettingsPrimitives";
+import {
+  IS_FORK_RELEASE,
+  RELEASE_FEED_URL,
+  RELEASE_REPOSITORY_SLUG,
+  UPSTREAM_REPOSITORY_SLUG,
+} from "@/config/releaseSource";
 
 type SettingsAboutSectionProps = {
   appSettings: AppSettings;
@@ -107,6 +113,14 @@ export function SettingsAboutSection({
         <div className="settings-help">
           Build date: <code>{buildDateLabel}</code>
         </div>
+        <div className="settings-help">
+          Release source: <code>{RELEASE_REPOSITORY_SLUG}</code>
+        </div>
+        {IS_FORK_RELEASE && (
+          <div className="settings-help">
+            Upstream project: <code>{UPSTREAM_REPOSITORY_SLUG}</code>
+          </div>
+        )}
       </div>
       <div className="settings-field">
         <div className="settings-label">App Updates</div>
@@ -124,6 +138,14 @@ export function SettingsAboutSection({
         <div className="settings-help">
           Currently running version <code>{__APP_VERSION__}</code>
         </div>
+        <div className="settings-help">
+          Update feed: <code>{RELEASE_FEED_URL}</code>
+        </div>
+        {IS_FORK_RELEASE && (
+          <div className="settings-help">
+            This build checks the fork release feed, not upstream CodexMonitor.
+          </div>
+        )}
         {!updaterEnabled && (
           <div className="settings-help">
             Updates are unavailable in this runtime.

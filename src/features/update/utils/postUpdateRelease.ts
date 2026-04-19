@@ -1,9 +1,7 @@
+import { RELEASES_API_BASE, RELEASES_WEB_BASE } from "@/config/releaseSource";
+
 export const STORAGE_KEY_PENDING_POST_UPDATE_VERSION =
   "codexmonitor.pendingPostUpdateVersion";
-const GITHUB_RELEASES_API_BASE =
-  "https://api.github.com/repos/Dimillian/CodexMonitor/releases";
-const GITHUB_RELEASES_WEB_BASE =
-  "https://github.com/Dimillian/CodexMonitor/releases";
 
 type GitHubReleaseResponse = {
   tag_name?: string;
@@ -32,7 +30,7 @@ export function normalizeReleaseVersion(value: string): string {
 export function buildReleaseTagUrl(version: string): string {
   const normalized = normalizeStoredVersion(version);
   const tag = normalized.length > 0 ? `v${normalized}` : "latest";
-  return `${GITHUB_RELEASES_WEB_BASE}/tag/${encodeURIComponent(tag)}`;
+  return `${RELEASES_WEB_BASE}/tag/${encodeURIComponent(tag)}`;
 }
 
 export function savePendingPostUpdateVersion(version: string): void {
@@ -96,7 +94,7 @@ export async function fetchReleaseNotesForVersion(
       continue;
     }
     seen.add(tag);
-    const url = `${GITHUB_RELEASES_API_BASE}/tags/${encodeURIComponent(tag)}`;
+    const url = `${RELEASES_API_BASE}/tags/${encodeURIComponent(tag)}`;
     const response = await fetch(url, {
       headers: {
         Accept: "application/vnd.github+json",

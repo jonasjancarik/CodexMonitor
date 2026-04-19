@@ -1,19 +1,28 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  IS_FORK_RELEASE,
+  RELEASE_REPOSITORY_SLUG,
+  RELEASE_REPOSITORY_URL,
+  UPSTREAM_REPOSITORY_URL,
+} from "@/config/releaseSource";
 
-const GITHUB_URL = "https://github.com/Dimillian/CodexMonitor";
 const TWITTER_URL = "https://x.com/dimillian";
 
 export function AboutView() {
   const [version, setVersion] = useState<string | null>(null);
 
   const handleOpenGitHub = () => {
-    void openUrl(GITHUB_URL);
+    void openUrl(RELEASE_REPOSITORY_URL);
   };
 
   const handleOpenTwitter = () => {
     void openUrl(TWITTER_URL);
+  };
+
+  const handleOpenUpstream = () => {
+    void openUrl(UPSTREAM_REPOSITORY_URL);
   };
 
   useEffect(() => {
@@ -52,7 +61,9 @@ export function AboutView() {
           {version ? `Version ${version}` : "Version —"}
         </div>
         <div className="about-tagline">
-          Monitor the situation of your Codex agents
+          {IS_FORK_RELEASE
+            ? `Fork build. Releases and updates come from ${RELEASE_REPOSITORY_SLUG}.`
+            : "Monitor the situation of your Codex agents"}
         </div>
         <div className="about-divider" />
         <div className="about-links">
@@ -61,18 +72,32 @@ export function AboutView() {
             className="about-link"
             onClick={handleOpenGitHub}
           >
-            GitHub
+            {IS_FORK_RELEASE ? "Fork GitHub" : "GitHub"}
           </button>
           <span className="about-link-sep">|</span>
-          <button
-            type="button"
-            className="about-link"
-            onClick={handleOpenTwitter}
-          >
-            Twitter
-          </button>
+          {IS_FORK_RELEASE ? (
+            <button
+              type="button"
+              className="about-link"
+              onClick={handleOpenUpstream}
+            >
+              Upstream
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="about-link"
+              onClick={handleOpenTwitter}
+            >
+              Twitter
+            </button>
+          )}
         </div>
-        <div className="about-footer">Made with ♥ by Codex & Dimillian</div>
+        <div className="about-footer">
+          {IS_FORK_RELEASE
+            ? `Fork build based on ${RELEASE_REPOSITORY_SLUG}. Upstream project by Dimillian.`
+            : "Made with ♥ by Codex & Dimillian"}
+        </div>
       </div>
     </div>
   );

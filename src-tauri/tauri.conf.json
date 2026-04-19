@@ -63,9 +63,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY0QTgzQUU0QTc2MEVBNDMKUldSRDZtQ241RHFvOURJbm1KeC81aEZaOXlhZHlHd2NEZVpPVWs5NjdjOFNhUFEyZGJpTkV0S2YK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZBMUIxODlFMjhFNzZBN0UKUldSK2F1Y29uaGdiYWlhM21NSVNzUVRtblhaaVIrVDNYRW15QytSWjhiWDZOQXVVbkt6UG1uekcK",
       "endpoints": [
-        "https://github.com/Dimillian/CodexMonitor/releases/latest/download/latest.json"
+        "https://github.com/jonasjancarik/CodexMonitor/releases/latest/download/latest.json"
       ]
     }
   }

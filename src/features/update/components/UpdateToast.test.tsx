@@ -4,6 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UpdateState } from "../hooks/useUpdater";
 import { UpdateToast } from "./UpdateToast";
+import { RELEASES_WEB_BASE } from "@/config/releaseSource";
 
 vi.mock("@tauri-apps/plugin-opener", () => ({
   openUrl: vi.fn(),
@@ -107,7 +108,7 @@ describe("UpdateToast", () => {
         postUpdateNotice={{
           stage: "loading",
           version: "1.2.3",
-          htmlUrl: "https://github.com/Dimillian/CodexMonitor/releases/tag/v1.2.3",
+          htmlUrl: `${RELEASES_WEB_BASE}/tag/v1.2.3`,
         }}
         onDismissPostUpdateNotice={onDismissPostUpdateNotice}
       />,
@@ -122,8 +123,7 @@ describe("UpdateToast", () => {
 
   it("renders post-update release notes and opens GitHub link", () => {
     const onDismissPostUpdateNotice = vi.fn();
-    const htmlUrl =
-      "https://github.com/Dimillian/CodexMonitor/releases/tag/v1.2.3";
+    const htmlUrl = `${RELEASES_WEB_BASE}/tag/v1.2.3`;
     const state: UpdateState = { stage: "idle" };
 
     const { container } = render(
@@ -153,8 +153,7 @@ describe("UpdateToast", () => {
   });
 
   it("renders post-update fallback notice", () => {
-    const htmlUrl =
-      "https://github.com/Dimillian/CodexMonitor/releases/tag/v1.2.3";
+    const htmlUrl = `${RELEASES_WEB_BASE}/tag/v1.2.3`;
     const state: UpdateState = { stage: "available", version: "9.9.9" };
 
     const { container } = render(

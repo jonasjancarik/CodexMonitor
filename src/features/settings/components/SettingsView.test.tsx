@@ -21,6 +21,7 @@ import {
   getModelList,
   listWorkspaces,
 } from "@services/tauri";
+import { RELEASE_REPOSITORY_SLUG } from "@/config/releaseSource";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
 import { SettingsView } from "./SettingsView";
 
@@ -770,6 +771,14 @@ describe("SettingsView About", () => {
     await waitFor(() => {
       expect(onToggleAutomaticAppUpdateChecks).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("shows the fork release source for app updates", () => {
+    renderAboutSection();
+    expect(screen.getByText(RELEASE_REPOSITORY_SLUG)).toBeTruthy();
+    expect(
+      screen.getByText("This build checks the fork release feed, not upstream CodexMonitor."),
+    ).toBeTruthy();
   });
 });
 

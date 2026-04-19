@@ -6,6 +6,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import type { DebugEntry } from "../../../types";
 import { useUpdater } from "./useUpdater";
 import { STORAGE_KEY_PENDING_POST_UPDATE_VERSION } from "../utils/postUpdateRelease";
+import { RELEASES_WEB_BASE } from "@/config/releaseSource";
 
 vi.mock("@tauri-apps/api/core", () => ({
   isTauri: vi.fn(() => true),
@@ -226,7 +227,7 @@ describe("useUpdater", () => {
       status: 200,
       json: async () => ({
         tag_name: `v${__APP_VERSION__}`,
-        html_url: `https://github.com/Dimillian/CodexMonitor/releases/tag/v${__APP_VERSION__}`,
+        html_url: `${RELEASES_WEB_BASE}/tag/v${__APP_VERSION__}`,
         body: "## New\n- Added updater notes",
       }),
     } as Response);
@@ -240,7 +241,7 @@ describe("useUpdater", () => {
     expect(result.current.postUpdateNotice).toMatchObject({
       stage: "ready",
       version: __APP_VERSION__,
-      htmlUrl: `https://github.com/Dimillian/CodexMonitor/releases/tag/v${__APP_VERSION__}`,
+      htmlUrl: `${RELEASES_WEB_BASE}/tag/v${__APP_VERSION__}`,
       body: "## New\n- Added updater notes",
     });
 
@@ -269,7 +270,7 @@ describe("useUpdater", () => {
     expect(result.current.postUpdateNotice).toMatchObject({
       stage: "fallback",
       version: __APP_VERSION__,
-      htmlUrl: `https://github.com/Dimillian/CodexMonitor/releases/tag/v${__APP_VERSION__}`,
+      htmlUrl: `${RELEASES_WEB_BASE}/tag/v${__APP_VERSION__}`,
     });
     expect(onDebug).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -314,7 +315,7 @@ describe("useUpdater", () => {
         status: 200,
         json: async () => ({
           tag_name: `v${__APP_VERSION__}`,
-          html_url: `https://github.com/Dimillian/CodexMonitor/releases/tag/v${__APP_VERSION__}`,
+          html_url: `${RELEASES_WEB_BASE}/tag/v${__APP_VERSION__}`,
           body: "## Notes",
         }),
       } as Response);
