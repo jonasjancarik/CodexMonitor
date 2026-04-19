@@ -1,6 +1,9 @@
 name: Linux Release
 
 on:
+  push:
+    branches:
+      - fork/linux-updater
   workflow_dispatch:
 
 permissions:
