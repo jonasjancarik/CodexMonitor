@@ -227,6 +227,9 @@ This fork ships Linux AppImage releases and updater metadata from GitHub Release
 `jonasjancarik/CodexMonitor`.
 
 - Trigger workflow: `Linux Release`
+- Source version stays aligned with upstream.
+- Fork-only release builds are published as `next-patch-fork.N`.
+  Example: upstream `0.7.68` -> first fork release `0.7.69-fork.1`
 - Output artifacts: `*.AppImage`, `*.AppImage.sig`, `latest.json`, `SHA256SUMS.txt`
 - Required repo secret: `TAURI_SIGNING_PRIVATE_KEY_B64`
 

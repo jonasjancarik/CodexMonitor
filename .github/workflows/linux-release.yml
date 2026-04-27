@@ -13,6 +13,7 @@ jobs:
   release-linux:
     runs-on: ubuntu-22.04
     env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TAURI_SIGNING_PRIVATE_KEY_B64: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_B64 }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
@@ -58,6 +59,114 @@ jobs:
             echo "Missing TAURI_SIGNING_PRIVATE_KEY_B64 secret."
             exit 1
           fi
+
+      - name: Derive fork release version
+        id: version
+        env:
+          REPOSITORY: ${{ github.repository }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          data = json.loads(Path("src-tauri/tauri.conf.json").read_text())
+          source_version = data["version"]
+          match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", source_version)
+          if not match:
+              raise SystemExit(
+                  f"Expected upstream base version in src-tauri/tauri.conf.json, got {source_version!r}"
+              )
+
+          major, minor, patch = map(int, match.groups())
+          fork_base = f"{major}.{minor}.{patch + 1}"
+          fork_prefix = f"v{fork_base}-fork."
+
+          tags_on_head = subprocess.check_output(
+              ["git", "tag", "--points-at", os.environ["CURRENT_SHA"]],
+              text=True,
+          ).splitlines()
+          existing_tag = next((tag for tag in tags_on_head if tag.startswith(fork_prefix)), None)
+          if existing_tag is not None:
+              release_version = existing_tag.removeprefix("v")
+          else:
+              raw = subprocess.check_output(
+                  [
+                      "gh",
+                      "release",
+                      "list",
+                      "--repo",
+                      os.environ["REPOSITORY"],
+                      "--limit",
+                      "100",
+                      "--json",
+                      "tagName",
+                  ],
+                  text=True,
+              )
+              releases = json.loads(raw)
+              suffixes = []
+              for release in releases:
+                  tag = release["tagName"]
+                  if tag.startswith(fork_prefix):
+                      suffix = tag.removeprefix(fork_prefix)
+                      if suffix.isdigit():
+                          suffixes.append(int(suffix))
+              next_suffix = max(suffixes, default=0) + 1
+              release_version = f"{fork_base}-fork.{next_suffix}"
+
+          github_output = Path(os.environ["GITHUB_OUTPUT"])
+          with github_output.open("a", encoding="utf-8") as fh:
+              fh.write(f"source_version={source_version}\n")
+              fh.write(f"release_version={release_version}\n")
+          print(f"Upstream base version: {source_version}")
+          print(f"Fork release version: {release_version}")
+          PY
+
+      - name: Stamp fork release version into build metadata
+        env:
+          SOURCE_VERSION: ${{ steps.version.outputs.source_version }}
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source_version = os.environ["SOURCE_VERSION"]
+          release_version = os.environ["RELEASE_VERSION"]
+
+          json_paths = [
+              Path("package.json"),
+              Path("package-lock.json"),
+              Path("src-tauri/tauri.conf.json"),
+          ]
+          for path in json_paths:
+              data = json.loads(path.read_text())
+              if path.name == "package-lock.json":
+                  if data.get("version") == source_version:
+                      data["version"] = release_version
+                  root_package = data.get("packages", {}).get("")
+                  if isinstance(root_package, dict) and root_package.get("version") == source_version:
+                      root_package["version"] = release_version
+              else:
+                  if data.get("version") == source_version:
+                      data["version"] = release_version
+              path.write_text(json.dumps(data, indent=2) + "\n")
+
+          cargo_path = Path("src-tauri/Cargo.toml")
+          cargo_text = cargo_path.read_text()
+          old = f'version = "{source_version}"'
+          new = f'version = "{release_version}"'
+          if old not in cargo_text:
+              raise SystemExit(f"Could not find {old!r} in {cargo_path}")
+          cargo_path.write_text(cargo_text.replace(old, new, 1))
+          PY
 
       - name: Install frontend dependencies
         run: npm ci
@@ -111,30 +220,23 @@ jobs:
           sha256sum *.AppImage > SHA256SUMS.txt
           popd >/dev/null
 
-      - name: Read version
-        id: version
-        run: |
-          set -euo pipefail
-          VERSION=$(python3 - <<'PY'
-          import json
-          from pathlib import Path
-          data = json.loads(Path("src-tauri/tauri.conf.json").read_text())
-          print(data["version"])
-          PY
-          )
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
       - name: Generate release notes
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          SOURCE_VERSION: ${{ steps.version.outputs.source_version }}
         run: |
           set -euo pipefail
-          tag="v${VERSION}"
+          upstream_tag="v${SOURCE_VERSION}"
+          echo "Based on upstream ${upstream_tag}." > release-artifacts/release-notes.md
+          echo "" >> release-artifacts/release-notes.md
+          tag=$(git tag --points-at "${GITHUB_SHA}" | grep -- '-fork\.' | head -n 1 || true)
+          if [ -z "${tag}" ]; then
+            tag="v${{ steps.version.outputs.release_version }}"
+          fi
           last_tag=$(git tag --sort=-version:refname | grep -v "^${tag}$" | head -n 1 || true)
           if [ -n "${last_tag}" ]; then
-            git log "${last_tag}..${GITHUB_SHA}" --pretty=format:"- %s" > release-artifacts/release-notes.md
+            git log "${last_tag}..${GITHUB_SHA}" --pretty=format:"- %s" >> release-artifacts/release-notes.md
           else
-            git log "${GITHUB_SHA}" --pretty=format:"- %s" > release-artifacts/release-notes.md
+            git log "${GITHUB_SHA}" --pretty=format:"- %s" >> release-artifacts/release-notes.md
           fi
           if [ ! -s release-artifacts/release-notes.md ]; then
             echo "- Linux AppImage fork release." > release-artifacts/release-notes.md
@@ -142,7 +244,7 @@ jobs:
 
       - name: Build latest.json
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.version.outputs.release_version }}
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
@@ -179,8 +281,7 @@ jobs:
 
       - name: Create or update GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.version.outputs.release_version }}
         run: |
           set -euo pipefail
           tag="v${VERSION}"
@@ -197,8 +298,7 @@ jobs:
 
       - name: Upload release assets
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.version.outputs.release_version }}
         run: |
           set -euo pipefail
           tag="v${VERSION}"
