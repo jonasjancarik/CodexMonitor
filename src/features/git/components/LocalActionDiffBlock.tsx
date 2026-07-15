@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type MouseEvent } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import type { GitFileDisplayHunk } from "../../../types";
 import type { ParsedDiffLine } from "../../../utils/diff";
 import { highlightLine } from "../../../utils/syntax";
@@ -167,7 +167,10 @@ export function LocalActionDiffBlock({
   onChunkAction,
 }: LocalActionDiffBlockProps) {
   const [hoveredHunkIds, setHoveredHunkIds] = useState<string[]>([]);
-  const hoveredHunkIdsRef = useRef<string[]>([]);
+  const hoveredHunkIdSet = useMemo(
+    () => new Set(hoveredHunkIds),
+    [hoveredHunkIds],
+  );
   const splitRows = useMemo(
     () => (diffStyle === "split" ? buildSplitRows(parsedLines) : []),
     [diffStyle, parsedLines],
@@ -180,6 +183,20 @@ export function LocalActionDiffBlock({
       }),
     [language, parsedLines],
   );
+  const parsedLineKeys = useMemo(() => {
+    const occurrences = new Map<string, number>();
+    return parsedLines.map((line) => {
+      const baseKey = JSON.stringify([
+        line.type,
+        line.oldLine,
+        line.newLine,
+        line.text,
+      ]);
+      const occurrence = occurrences.get(baseKey) ?? 0;
+      occurrences.set(baseKey, occurrence + 1);
+      return `${baseKey}:${occurrence}`;
+    });
+  }, [parsedLines]);
 
   const displayHunkActions = useMemo(
     () =>
@@ -194,12 +211,11 @@ export function LocalActionDiffBlock({
 
   const updateHoveredHunkIds = (nextHunkIds: string[]) => {
     if (
-      hoveredHunkIdsRef.current.length === nextHunkIds.length &&
-      hoveredHunkIdsRef.current.every((value, index) => value === nextHunkIds[index])
+      hoveredHunkIds.length === nextHunkIds.length &&
+      hoveredHunkIds.every((value, index) => value === nextHunkIds[index])
     ) {
       return;
     }
-    hoveredHunkIdsRef.current = nextHunkIds;
     setHoveredHunkIds(nextHunkIds);
   };
 
@@ -295,7 +311,7 @@ export function LocalActionDiffBlock({
         .map((id) => actionsById.get(id))
         .filter((value): value is LocalLineAction => Boolean(value)) ?? []);
     const isLineActive = Boolean(
-      meta?.activeHunkIds.some((id) => hoveredHunkIds.includes(id)),
+      meta?.activeHunkIds.some((id) => hoveredHunkIdSet.has(id)),
     );
     const lineClassName = `diff-line diff-line-${line.type}${
       startActions.length > 0 ? " has-line-action" : ""
@@ -418,7 +434,7 @@ export function LocalActionDiffBlock({
       }}
     >
       {parsedLines.map((line, index) => (
-        <div key={index}>{renderLine(line, index)}</div>
+        <div key={parsedLineKeys[index]}>{renderLine(line, index)}</div>
       ))}
     </div>
   );

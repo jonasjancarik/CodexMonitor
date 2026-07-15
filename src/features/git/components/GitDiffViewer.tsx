@@ -23,6 +23,8 @@ import type {
 } from "./GitDiffViewer.types";
 import { calculateDiffStats } from "./GitDiffViewer.utils";
 
+const EMPTY_PATHS: string[] = [];
+
 function isSelectableLine(
   line: ParsedDiffLine,
 ): line is ParsedDiffLine & { type: "add" | "del" | "context" } {
@@ -161,8 +163,8 @@ export function GitDiffViewer({
   onCheckoutPullRequest,
   canRevert = false,
   onRevertFile,
-  stagedPaths = [],
-  unstagedPaths = [],
+  stagedPaths = EMPTY_PATHS,
+  unstagedPaths = EMPTY_PATHS,
   onApplyDisplayHunk,
   onActivePathChange,
   onInsertComposerText,
