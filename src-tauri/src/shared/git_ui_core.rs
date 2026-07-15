@@ -16,10 +16,14 @@ mod commands;
 mod context;
 #[path = "git_ui_core/diff.rs"]
 mod diff;
+#[path = "git_ui_core/display_hunks.rs"]
+mod display_hunks;
 #[path = "git_ui_core/github.rs"]
 mod github;
 #[path = "git_ui_core/log.rs"]
 mod log;
+#[path = "git_ui_core/selection.rs"]
+mod selection;
 
 #[cfg(test)]
 #[path = "git_ui_core/tests.rs"]
@@ -125,7 +129,7 @@ pub(crate) async fn stage_git_selection_core(
     source: String,
     lines: Vec<GitSelectionLine>,
 ) -> Result<GitSelectionApplyResult, String> {
-    commands::stage_git_selection_inner(workspaces, workspace_id, path, op, source, lines).await
+    selection::stage_git_selection_inner(workspaces, workspace_id, path, op, source, lines).await
 }
 
 pub(crate) async fn apply_git_display_hunk_core(
@@ -139,7 +143,7 @@ pub(crate) async fn apply_git_display_hunk_core(
         let settings = app_settings.lock().await;
         settings.git_diff_ignore_whitespace_changes
     };
-    commands::apply_git_display_hunk_inner(
+    selection::apply_git_display_hunk_inner(
         workspaces,
         workspace_id,
         path,
