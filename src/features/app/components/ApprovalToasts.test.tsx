@@ -81,8 +81,8 @@ describe("ApprovalToasts", () => {
       />,
     );
 
-    expect(screen.getByText("MCP response needed")).toBeTruthy();
-    expect(screen.getByText("MCP server elicitation")).toBeTruthy();
+    expect(screen.getByText("MCP server needs a response")).toBeTruthy();
+    expect(screen.getByText("MCP server request")).toBeTruthy();
     expect(screen.queryByText("Always allow")).toBeNull();
 
     fireEvent.keyDown(window, { key: "Enter" });

@@ -74,7 +74,7 @@ export function ApprovalToasts({
 
   const methodLabel = (method: string) => {
     if (isMcpElicitationRequestMethod(method)) {
-      return "MCP server elicitation";
+      return "MCP server request";
     }
     const trimmed = method.replace(/^codex\/requestApproval\/?/, "");
     return trimmed || method;
@@ -112,7 +112,7 @@ export function ApprovalToasts({
           >
             <ToastHeader className="approval-toast-header">
               <ToastTitle className="approval-toast-title">
-                {isMcpElicitation ? "MCP response needed" : "Approval needed"}
+                {isMcpElicitation ? "MCP server needs a response" : "Approval needed"}
               </ToastTitle>
               {workspaceName ? (
                 <div className="approval-toast-workspace">{workspaceName}</div>

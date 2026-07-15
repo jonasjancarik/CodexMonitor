@@ -1132,8 +1132,8 @@ export default function MainApp() {
         });
         alertError(
           error instanceof Error
-            ? `Restart Codex session failed: ${error.message}`
-            : "Restart Codex session failed.",
+            ? `Couldn't restart the Codex session: ${error.message}`
+            : "Couldn't restart the Codex session.",
         );
       }
     },

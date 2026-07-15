@@ -56,13 +56,13 @@ export function RemoteWorkspacePathPrompt({
           className="ds-modal-textarea"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={"/home/vlad/dev/project-one\n/home/vlad/dev/project-two"}
+          placeholder={"/home/user/projects/project-one\n/home/user/projects/project-two"}
           rows={4}
           wrap="off"
         />
         <div className="remote-workspace-path-modal-hint">
-          One path per line. Comma and semicolon separators also work. You can use
-          `~/...`. Paths are resolved on the remote daemon, not this computer.
+          Enter one server path per line. Commas and semicolons also work, and
+          `~/...` uses the server&apos;s home directory.
         </div>
         {recentPaths.length > 0 && (
           <div className="remote-workspace-path-modal-recent">
