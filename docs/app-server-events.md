@@ -1,4 +1,4 @@
-# App-Server Events Reference (Codex `19702e190ebf16f789617ca5f16bfc373c238fe7`)
+# App-Server Events Reference (Codex `365d70203da18c2a6f6848df3778e390e794ef17`)
 
 This document helps agents quickly answer:
 - Which app-server events CodexMonitor supports right now.
@@ -122,27 +122,48 @@ CodexMonitor status:
 Compared against Codex app-server protocol v2 notifications, the following
 events are currently not routed:
 
-- `configWarning`
 - `command/exec/outputDelta`
+- `configWarning`
 - `deprecationNotice`
+- `externalAgentConfig/import/completed`
+- `externalAgentConfig/import/progress`
+- `fs/changed`
 - `fuzzyFileSearch/sessionCompleted`
 - `fuzzyFileSearch/sessionUpdated`
-- `item/mcpToolCall/progress`
+- `guardianWarning`
 - `item/autoApprovalReview/completed`
 - `item/autoApprovalReview/started`
+- `item/fileChange/patchUpdated`
+- `item/mcpToolCall/progress`
 - `mcpServer/oauthLogin/completed`
 - `mcpServer/startupStatus/updated`
 - `model/rerouted`
+- `model/safetyBuffering/updated`
+- `model/verification`
+- `process/exited`
+- `process/outputDelta`
+- `rawResponse/completed`
 - `rawResponseItem/completed`
+- `remoteControl/status/changed`
 - `serverRequest/resolved`
 - `skills/changed`
 - `thread/compacted` (deprecated; intentionally not routed)
+- `thread/deleted`
+- `thread/environment/connected`
+- `thread/environment/disconnected`
+- `thread/goal/cleared`
+- `thread/goal/updated`
 - `thread/realtime/closed`
 - `thread/realtime/error`
 - `thread/realtime/itemAdded`
 - `thread/realtime/outputAudio/delta`
+- `thread/realtime/sdp`
 - `thread/realtime/started`
-- `thread/realtime/transcriptUpdated`
+- `thread/realtime/transcript/delta`
+- `thread/realtime/transcript/done`
+- `thread/settings/updated`
+- `turn/moderationMetadata`
+- `warning`
 - `windows/worldWritableWarning`
 - `windowsSandbox/setupCompleted`
 
@@ -154,6 +175,7 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 - `thread/resume`
 - `thread/fork`
 - `thread/list`
+- `thread/read`
 - `thread/archive`
 - `thread/compact/start`
 - `thread/name/set`
@@ -173,13 +195,17 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 - `app/list`
 
 Notes:
-- `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
+- `turn/start` forwards the optional `serviceTier` override (`"fast"` from the speed picker or `/fast`, `null` for standard speed) alongside `model`, `effort`, and `collaborationMode`.
 
 ## Missing Client Requests (Codex v2 ClientRequest Methods)
 
 Compared against Codex v2 request methods, CodexMonitor currently does not send:
 
 - `account/logout`
+- `account/rateLimitResetCredit/consume`
+- `account/sendAddCreditsNudgeEmail`
+- `account/usage/read`
+- `account/workspaceMessages/read`
 - `command/exec`
 - `command/exec/resize`
 - `command/exec/terminate`
@@ -189,8 +215,13 @@ Compared against Codex v2 request methods, CodexMonitor currently does not send:
 - `config/read`
 - `config/value/write`
 - `configRequirements/read`
+- `environment/add`
+- `environment/info`
+- `environment/status`
+- `experimentalFeature/enablement/set`
 - `externalAgentConfig/detect`
 - `externalAgentConfig/import`
+- `externalAgentConfig/import/readHistories`
 - `feedback/upload`
 - `fs/copy`
 - `fs/createDirectory`
@@ -198,31 +229,73 @@ Compared against Codex v2 request methods, CodexMonitor currently does not send:
 - `fs/readDirectory`
 - `fs/readFile`
 - `fs/remove`
+- `fs/unwatch`
+- `fs/watch`
 - `fs/writeFile`
-- `fuzzyFileSearch/sessionStart`
-- `fuzzyFileSearch/sessionStop`
-- `fuzzyFileSearch/sessionUpdate`
+- `hooks/list`
+- `marketplace/add`
+- `marketplace/remove`
+- `marketplace/upgrade`
 - `mcpServer/oauth/login`
+- `mcpServer/resource/read`
+- `mcpServer/tool/call`
+- `memory/reset`
 - `mock/experimentalMethod`
+- `modelProvider/capabilities/read`
+- `permissionProfile/list`
 - `plugin/install`
+- `plugin/installed`
 - `plugin/list`
 - `plugin/read`
+- `plugin/share/checkout`
+- `plugin/share/delete`
+- `plugin/share/list`
+- `plugin/share/save`
+- `plugin/share/updateTargets`
+- `plugin/skill/read`
 - `plugin/uninstall`
+- `process/kill`
+- `process/resizePty`
+- `process/spawn`
+- `process/writeStdin`
+- `remoteControl/client/list`
+- `remoteControl/client/revoke`
+- `remoteControl/disable`
+- `remoteControl/enable`
+- `remoteControl/pairing/start`
+- `remoteControl/pairing/status`
+- `remoteControl/status/read`
 - `skills/config/write`
+- `skills/extraRoots/set`
+- `thread/approveGuardianDeniedAction`
 - `thread/backgroundTerminals/clean`
+- `thread/backgroundTerminals/list`
+- `thread/backgroundTerminals/terminate`
 - `thread/decrement_elicitation`
+- `thread/delete`
+- `thread/goal/clear`
+- `thread/goal/get`
+- `thread/goal/set`
 - `thread/increment_elicitation`
+- `thread/inject_items`
+- `thread/items/list`
 - `thread/loaded/list`
+- `thread/memoryMode/set`
 - `thread/metadata/update`
-- `thread/read`
 - `thread/realtime/appendAudio`
+- `thread/realtime/appendSpeech`
 - `thread/realtime/appendText`
+- `thread/realtime/listVoices`
 - `thread/realtime/start`
 - `thread/realtime/stop`
 - `thread/rollback`
+- `thread/search`
+- `thread/settings/update`
 - `thread/shellCommand`
+- `thread/turns/list`
 - `thread/unarchive`
 - `thread/unsubscribe`
+- `windowsSandbox/readiness`
 - `windowsSandbox/setupStart`
 
 ## Server Requests (App-Server -> CodexMonitor, v2)
@@ -237,8 +310,10 @@ Supported server requests:
 
 Missing server requests:
 
-- `item/tool/call`
 - `account/chatgptAuthTokens/refresh`
+- `attestation/generate`
+- `currentTime/read`
+- `item/tool/call`
 
 ## Where To Look In ../Codex
 
@@ -247,7 +322,7 @@ Start here for the authoritative v2 notification list:
 
 Useful follow-ups:
 - Notification payload types:
-  - `../Codex/codex-rs/app-server-protocol/src/protocol/v2.rs`
+  - `../Codex/codex-rs/app-server-protocol/src/protocol/v2/`
 - Emitters / wiring from core events to server notifications:
   - `../Codex/codex-rs/app-server/src/bespoke_event_handling.rs`
 - Human-readable protocol notes:
@@ -286,16 +361,16 @@ Use this when the method list is unchanged but behavior looks off.
 1. Confirm the current Codex hash:
    - `git -C ../Codex fetch --all --prune && git -C ../Codex rev-parse origin/main`
 2. Inspect the authoritative notification structs:
-   - `git -C ../Codex show origin/main:codex-rs/app-server-protocol/src/protocol/v2.rs | rg -n \"struct .*Notification\"`
+   - `git -C ../Codex grep -n \"struct .*Notification\" origin/main -- codex-rs/app-server-protocol/src/protocol/v2`
 3. For a specific method, jump to its struct definition:
-   - Example: `git -C ../Codex show origin/main:codex-rs/app-server-protocol/src/protocol/v2.rs | rg -n \"struct TurnPlanUpdatedNotification|struct ThreadTokenUsageUpdatedNotification|struct AccountRateLimitsUpdatedNotification|struct ItemStartedNotification|struct ItemCompletedNotification\"`
+   - Example: `git -C ../Codex grep -n -E \"struct (TurnPlanUpdatedNotification|ThreadTokenUsageUpdatedNotification|AccountRateLimitsUpdatedNotification|ItemStartedNotification|ItemCompletedNotification)\" origin/main -- codex-rs/app-server-protocol/src/protocol/v2`
 4. Compare payload shapes to the router expectations:
    - Parser/source of truth: `src/utils/appServerEvents.ts`
    - Router: `src/features/app/hooks/useAppServerEvents.ts`
    - Turn/plan/token/rate-limit normalization: `src/features/threads/utils/threadNormalize.ts`
    - Item shaping for display: `src/utils/threadItems.ts`
 5. Verify the ThreadItem schema (many UI issues start here):
-   - `git -C ../Codex show origin/main:codex-rs/app-server-protocol/src/protocol/v2.rs | rg -n \"enum ThreadItem|CommandExecution|FileChange|McpToolCall|EnteredReviewMode|ExitedReviewMode|ContextCompaction\"`
+   - `git -C ../Codex grep -n -E \"enum ThreadItem|CommandExecution|FileChange|McpToolCall|EnteredReviewMode|ExitedReviewMode|ContextCompaction\" origin/main -- codex-rs/app-server-protocol/src/protocol/v2`
 6. Check for camelCase vs snake_case mismatches:
    - The protocol uses `#[serde(rename_all = \"camelCase\")]`, but fields are often declared in snake_case.
    - CodexMonitor generally defends against this by checking both forms (for example in `threadNormalize.ts` and `useAppServerEvents.ts`), while centralizing method/type parsing in `appServerEvents.ts`.

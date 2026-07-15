@@ -11,7 +11,7 @@ git -C ../Codex rev-parse HEAD
 ## Notifications
 
 ```bash
-(rg -N -o '=>\s*"[^"]+"\s*\(v2::[^)]*Notification\)' ../Codex/codex-rs/app-server-protocol/src/protocol/common.rs | sed -E 's/.*"([^"]+)".*/\1/'; printf '%s\n' 'account/login/completed') | sort -u
+awk '/server_notification_definitions! \{/,/client_notification_definitions! \{/' ../Codex/codex-rs/app-server-protocol/src/protocol/common.rs | rg -N -o '=>\s*"[^"]+"|rename = "[^"]+"' | sed -E 's/.*"([^"]+)".*/\1/' | sort -u
 rg -n "SUPPORTED_APP_SERVER_METHODS" src/utils/appServerEvents.ts
 ```
 
@@ -26,6 +26,6 @@ perl -0777 -ne 'while(/send_request_for_workspace\(\s*&[^,]+\s*,\s*"([^"]+)"/g){
 ## Schema Drift
 
 ```bash
-rg -n "struct .*Notification" ../Codex/codex-rs/app-server-protocol/src/protocol/v2.rs
-rg -n "enum ThreadItem|CommandExecution|FileChange|McpToolCall|EnteredReviewMode|ExitedReviewMode|ContextCompaction" ../Codex/codex-rs/app-server-protocol/src/protocol/v2.rs
+rg -n "struct .*Notification" ../Codex/codex-rs/app-server-protocol/src/protocol/v2
+rg -n "enum ThreadItem|CommandExecution|FileChange|McpToolCall|EnteredReviewMode|ExitedReviewMode|ContextCompaction" ../Codex/codex-rs/app-server-protocol/src/protocol/v2
 ```

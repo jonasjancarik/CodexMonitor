@@ -28,7 +28,7 @@ Treat that file as the canonical runbook and update it when behavior changes.
 - Update `Supported Requests`, `Missing Client Requests`, and `Server Requests` sections.
 
 4. Investigate schema drift when lists look unchanged:
-- Inspect v2 payload structs in `../Codex/codex-rs/app-server-protocol/src/protocol/v2.rs`.
+- Inspect v2 payload structs in `../Codex/codex-rs/app-server-protocol/src/protocol/v2/`.
 - Compare parser and normalization edges in `src/utils/appServerEvents.ts`, `src/features/app/hooks/useAppServerEvents.ts`, and `src/features/threads/utils/threadNormalize.ts`.
 
 5. Implement support when requested:
