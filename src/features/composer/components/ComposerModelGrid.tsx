@@ -9,12 +9,25 @@ import {
 } from "lucide-react";
 import { useId, useState, type CSSProperties } from "react";
 
-import { isRecommendedModelEffort } from "@/features/models/utils/modelRecommendations";
+import {
+  getRecommendedModelEffortAlternative,
+  getRecommendedModelFamily,
+  isRecommendedModelEffort,
+  type ModelEffortAlternative,
+} from "@/features/models/utils/modelRecommendations";
 import { formatReasoningEffortLabel } from "@/features/models/utils/reasoningEffort";
 import type { ModelOption } from "@/types";
 
 const DEFAULT_EFFORT_ID = "__default__";
-const EFFORT_ORDER = ["low", "medium", "high", "xhigh", "max", "ultra"];
+const EFFORT_ORDER = [
+  "none",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+  "ultra",
+];
 const RECOMMENDATION_SOURCE_URL =
   "https://x.com/rasbt/status/2075961865683825141";
 
@@ -34,6 +47,13 @@ function modelLabel(model: ModelOption): string {
 function shortModelLabel(model: ModelOption): string {
   const withoutGptPrefix = modelLabel(model).trim().replace(/^gpt-/i, "");
   return withoutGptPrefix.replace(/-codex$/i, "");
+}
+
+function alternativeLabel(alternative: ModelEffortAlternative): string {
+  const family =
+    alternative.modelFamily.charAt(0).toUpperCase() +
+    alternative.modelFamily.slice(1);
+  return `${family} ${formatReasoningEffortLabel(alternative.effort)}`;
 }
 
 function isOlderThanGpt56(model: ModelOption): boolean {
@@ -102,6 +122,10 @@ export function ComposerModelGrid({
 }: ComposerModelGridProps) {
   const radioGroupName = useId();
   const [showOlderModels, setShowOlderModels] = useState(false);
+  const [hoveredAlternative, setHoveredAlternative] =
+    useState<ModelEffortAlternative | null>(null);
+  const [focusedAlternative, setFocusedAlternative] =
+    useState<ModelEffortAlternative | null>(null);
   const currentModels = models.filter((model) => !isOlderThanGpt56(model));
   const olderModels = models.filter(isOlderThanGpt56);
   const efforts = collectEfforts(models, selectedModelId, selectedModelEfforts);
@@ -113,6 +137,7 @@ export function ComposerModelGrid({
   const gridStyle = {
     "--composer-model-columns": efforts.length,
   } as CSSProperties;
+  const previewedAlternative = hoveredAlternative ?? focusedAlternative;
 
   if (models.length === 0) {
     return <div className="composer-model-grid-empty">No models available</div>;
@@ -144,6 +169,9 @@ export function ComposerModelGrid({
           gridStyle={gridStyle}
           models={currentModels}
           onSelect={onSelect}
+          onFocusAlternative={setFocusedAlternative}
+          onHoverAlternative={setHoveredAlternative}
+          previewedAlternative={previewedAlternative}
           radioGroupName={radioGroupName}
           selectedEffort={selectedEffort}
           selectedModelEfforts={selectedModelEfforts}
@@ -178,6 +206,9 @@ export function ComposerModelGrid({
               gridStyle={gridStyle}
               models={olderModels}
               onSelect={onSelect}
+              onFocusAlternative={setFocusedAlternative}
+              onHoverAlternative={setHoveredAlternative}
+              previewedAlternative={previewedAlternative}
               radioGroupName={radioGroupName}
               selectedEffort={selectedEffort}
               selectedModelEfforts={selectedModelEfforts}
@@ -223,6 +254,9 @@ type ModelRowsProps = {
   gridStyle: CSSProperties;
   models: ModelOption[];
   onSelect: (modelId: string, effort: string | null) => void;
+  onFocusAlternative: (alternative: ModelEffortAlternative | null) => void;
+  onHoverAlternative: (alternative: ModelEffortAlternative | null) => void;
+  previewedAlternative: ModelEffortAlternative | null;
   radioGroupName: string;
   selectedEffort: string | null;
   selectedModelEfforts: string[];
@@ -236,6 +270,9 @@ function ModelRows({
   gridStyle,
   models,
   onSelect,
+  onFocusAlternative,
+  onHoverAlternative,
+  previewedAlternative,
   radioGroupName,
   selectedEffort,
   selectedModelEfforts,
@@ -260,6 +297,9 @@ function ModelRows({
             model={model}
             modelIndex={modelIndex}
             onSelect={onSelect}
+            onFocusAlternative={onFocusAlternative}
+            onHoverAlternative={onHoverAlternative}
+            previewedAlternative={previewedAlternative}
             radioGroupName={radioGroupName}
             selectedEffort={selectedEffort}
             selectedModelId={selectedModelId}
@@ -277,6 +317,9 @@ type ModelRowProps = {
   model: ModelOption;
   modelIndex: number;
   onSelect: (modelId: string, effort: string | null) => void;
+  onFocusAlternative: (alternative: ModelEffortAlternative | null) => void;
+  onHoverAlternative: (alternative: ModelEffortAlternative | null) => void;
+  previewedAlternative: ModelEffortAlternative | null;
   radioGroupName: string;
   selectedEffort: string | null;
   selectedModelId: string | null;
@@ -289,12 +332,16 @@ function ModelRow({
   model,
   modelIndex,
   onSelect,
+  onFocusAlternative,
+  onHoverAlternative,
+  previewedAlternative,
   radioGroupName,
   selectedEffort,
   selectedModelId,
   supportedEfforts,
 }: ModelRowProps) {
   const fullModelLabel = modelLabel(model);
+  const family = getRecommendedModelFamily(model);
   return (
     <>
       <span
@@ -314,6 +361,16 @@ function ModelRow({
             : effort === selectedEffort);
         const recommended =
           supported && isRecommendedModelEffort(model, effort);
+        const alternative = supported
+          ? getRecommendedModelEffortAlternative(model, effort)
+          : null;
+        const isRecommendationTarget =
+          supported &&
+          family === previewedAlternative?.modelFamily &&
+          effort === previewedAlternative.effort;
+        const recommendedAlternativeLabel = alternative
+          ? alternativeLabel(alternative)
+          : null;
         const effortLabel =
           effort === DEFAULT_EFFORT_ID
             ? "Default"
@@ -330,6 +387,10 @@ function ModelRow({
               value={`${model.id}:${effort}`}
               aria-label={`${fullModelLabel}, ${effortLabel} reasoning${
                 recommended ? ", recommended value" : ""
+              }${
+                recommendedAlternativeLabel
+                  ? `, recommended alternative: ${recommendedAlternativeLabel}`
+                  : ""
               }`}
               checked={selected}
               disabled={disabled || !supported}
@@ -339,16 +400,28 @@ function ModelRow({
                   effort === DEFAULT_EFFORT_ID ? null : effort,
                 )
               }
+              onBlur={() => onFocusAlternative(null)}
+              onFocus={() => onFocusAlternative(alternative)}
             />
             <label
               className={`composer-model-grid-cell-label${
                 selected ? " is-active" : ""
               }${recommended ? " is-recommended" : ""}${
+                isRecommendationTarget ? " is-recommendation-target" : ""
+              }${
                 !supported ? " is-disabled" : ""
               }`}
               htmlFor={inputId}
               aria-hidden
-              title={recommended ? "Recommended value" : undefined}
+              title={
+                recommended
+                  ? "Recommended value"
+                  : recommendedAlternativeLabel
+                    ? `Recommended instead: ${recommendedAlternativeLabel}`
+                    : undefined
+              }
+              onMouseEnter={() => onHoverAlternative(alternative)}
+              onMouseLeave={() => onHoverAlternative(null)}
             >
               {!supported ? (
                 <Minus size={12} strokeWidth={1.8} />

@@ -219,7 +219,12 @@ describe("Composer send triggers", () => {
         onSend={() => {}}
         models={[
           modelOption("gpt-5.6-luna", "GPT-5.6 Luna", ["low", "high"]),
-          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["high", "xhigh", "max"]),
+          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", [
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+          ]),
           modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["low", "max", "ultra"]),
         ]}
         selectedModelId="gpt-5.6-sol"
@@ -238,17 +243,17 @@ describe("Composer send triggers", () => {
     );
     expect(
       screen.getByRole("radio", {
-        name: "GPT-5.6 Luna, High reasoning, recommended value",
+        name: "GPT-5.6 Luna, Low reasoning, recommended value",
       }),
     ).toBeTruthy();
     expect(
       screen.getByRole("radio", {
-        name: "GPT-5.6 Sol, High reasoning, recommended value",
+        name: "GPT-5.6 Sol, Medium reasoning, recommended value",
       }),
     ).toBeTruthy();
     expect(
       screen.getByRole("radio", {
-        name: "GPT-5.6 Sol, Max reasoning, recommended value",
+        name: "GPT-5.6 Sol, Extra High reasoning, recommended value",
       }),
     ).toBeTruthy();
     expect(
@@ -257,18 +262,13 @@ describe("Composer send triggers", () => {
       }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("radio", {
-        name: "GPT-5.6 Terra, Ultra reasoning, recommended value",
-      }),
-    ).toBeTruthy();
-    expect(
       screen.queryByRole("radio", {
-        name: /GPT-5.6 Luna, Low reasoning, recommended value/,
+        name: /GPT-5.6 Sol, High reasoning, recommended value/,
       }),
     ).toBeNull();
     expect(
       screen.queryByRole("radio", {
-        name: /GPT-5.6 Sol, Extra High reasoning, recommended value/,
+        name: /GPT-5.6 Sol, Max reasoning, recommended value/,
       }),
     ).toBeNull();
     expect(
@@ -276,6 +276,57 @@ describe("Composer send triggers", () => {
         name: /GPT-5.6 Terra, Low reasoning, recommended value/,
       }),
     ).toBeNull();
+    expect(
+      screen.queryByRole("radio", {
+        name: /GPT-5.6 Terra, Ultra reasoning, recommended value/,
+      }),
+    ).toBeNull();
+  });
+
+  it("pulses the recommended alternative on hover and keyboard focus", () => {
+    render(
+      <ComposerHarness
+        onSend={() => {}}
+        models={[
+          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["high"]),
+          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["max"]),
+        ]}
+        selectedModelId="gpt-5.6-sol"
+        reasoningOptions={["high"]}
+        selectedEffort="high"
+        reasoningSupported={true}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+
+    const solHigh = screen.getByRole("radio", {
+      name: /GPT-5.6 Sol, High reasoning, recommended alternative: Terra Max/,
+    });
+    const terraMax = screen.getByRole("radio", {
+      name: "GPT-5.6 Terra, Max reasoning, recommended value",
+    });
+    const solHighLabel = solHigh.nextElementSibling as HTMLElement;
+    const terraMaxLabel = terraMax.nextElementSibling as HTMLElement;
+
+    expect(solHighLabel.title).toBe("Recommended instead: Terra Max");
+    fireEvent.mouseEnter(solHighLabel);
+    expect(terraMaxLabel.classList.contains("is-recommendation-target")).toBe(
+      true,
+    );
+    fireEvent.mouseLeave(solHighLabel);
+    expect(terraMaxLabel.classList.contains("is-recommendation-target")).toBe(
+      false,
+    );
+
+    fireEvent.focus(solHigh);
+    expect(terraMaxLabel.classList.contains("is-recommendation-target")).toBe(
+      true,
+    );
+    fireEvent.blur(solHigh);
+    expect(terraMaxLabel.classList.contains("is-recommendation-target")).toBe(
+      false,
+    );
   });
 
   it("selects model and reasoning from a grid and keeps older models collapsed", () => {

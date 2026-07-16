@@ -1011,6 +1011,28 @@
   color: var(--text-emphasis);
 }
 
+.composer-model-grid-cell-label.is-recommendation-target {
+  position: relative;
+  z-index: 1;
+  border-color: color-mix(in srgb, var(--status-success) 55%, transparent);
+  animation: composer-recommendation-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes composer-recommendation-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--status-success) 0%, transparent);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--status-success) 18%, transparent);
+    transform: scale(1.035);
+  }
+}
+
 .composer-model-grid-cell-label.is-disabled {
   background: color-mix(in srgb, var(--surface-control-disabled) 50%, transparent);
   color: var(--text-fainter);
