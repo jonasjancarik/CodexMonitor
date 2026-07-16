@@ -248,11 +248,6 @@ describe("Composer send triggers", () => {
     ).toBeTruthy();
     expect(
       screen.getByRole("radio", {
-        name: "GPT-5.6 Terra, Low reasoning, recommended value",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("radio", {
         name: "GPT-5.6 Terra, Max reasoning, recommended value",
       }),
     ).toBeTruthy();
@@ -264,6 +259,11 @@ describe("Composer send triggers", () => {
     expect(
       screen.queryByRole("radio", {
         name: /GPT-5.6 Sol, Extra High reasoning, recommended value/,
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("radio", {
+        name: /GPT-5.6 Terra, Low reasoning, recommended value/,
       }),
     ).toBeNull();
   });

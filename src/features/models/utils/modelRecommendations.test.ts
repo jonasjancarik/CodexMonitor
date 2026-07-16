@@ -37,10 +37,10 @@ describe("isRecommendedModelEffort", () => {
     expect(isRecommendedModelEffort(sol, "ultra")).toBe(false);
   });
 
-  it("recommends Low and corrected-label Max for GPT-5.6 Terra", () => {
+  it("recommends only corrected-label Max for GPT-5.6 Terra", () => {
     const terra = model("gpt-5.6-terra");
 
-    expect(isRecommendedModelEffort(terra, "low")).toBe(true);
+    expect(isRecommendedModelEffort(terra, "low")).toBe(false);
     expect(isRecommendedModelEffort(terra, "medium")).toBe(false);
     expect(isRecommendedModelEffort(terra, "high")).toBe(false);
     expect(isRecommendedModelEffort(terra, "xhigh")).toBe(false);
