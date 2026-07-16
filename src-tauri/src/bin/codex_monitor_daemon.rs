@@ -87,8 +87,9 @@ use shared::{
 use storage::{read_settings, read_workspaces};
 use types::{
     AppSettings, GitCommitDiff, GitFileDiff, GitHubIssuesResponse, GitHubPullRequestComment,
-    GitHubPullRequestDiff, GitHubPullRequestsResponse, GitLogResponse, LocalUsageSnapshot,
-    WorkspaceEntry, WorkspaceInfo, WorkspaceSettings, WorktreeSetupStatus,
+    GitHubPullRequestDiff, GitHubPullRequestsResponse, GitLogResponse, GitSelectionApplyResult,
+    GitSelectionLine, LocalUsageSnapshot, WorkspaceEntry, WorkspaceInfo, WorkspaceSettings,
+    WorktreeSetupStatus,
 };
 use workspace_settings::apply_workspace_settings_update;
 
@@ -535,6 +536,31 @@ impl DaemonState {
 
         let client_version = client_version.clone();
         workspaces_core::connect_workspace_core(
+            id,
+            &self.workspaces,
+            &self.sessions,
+            &self.app_settings,
+            move |entry, default_bin, codex_args, codex_home| {
+                spawn_with_client(
+                    self.event_sink.clone(),
+                    client_version.clone(),
+                    entry,
+                    default_bin,
+                    codex_args,
+                    codex_home,
+                )
+            },
+        )
+        .await
+    }
+
+    async fn restart_workspace_session(
+        &self,
+        id: String,
+        client_version: String,
+    ) -> Result<Vec<String>, String> {
+        let client_version = client_version.clone();
+        workspaces_core::restart_workspace_session_core(
             id,
             &self.workspaces,
             &self.sessions,
@@ -1085,6 +1111,41 @@ impl DaemonState {
 
     async fn stage_git_all(&self, workspace_id: String) -> Result<(), String> {
         git_ui_core::stage_git_all_core(&self.workspaces, workspace_id).await
+    }
+
+    async fn stage_git_selection(
+        &self,
+        workspace_id: String,
+        path: String,
+        op: String,
+        source: String,
+        lines: Vec<GitSelectionLine>,
+    ) -> Result<GitSelectionApplyResult, String> {
+        git_ui_core::stage_git_selection_core(
+            &self.workspaces,
+            workspace_id,
+            path,
+            op,
+            source,
+            lines,
+        )
+        .await
+    }
+
+    async fn apply_git_display_hunk(
+        &self,
+        workspace_id: String,
+        path: String,
+        display_hunk_id: String,
+    ) -> Result<GitSelectionApplyResult, String> {
+        git_ui_core::apply_git_display_hunk_core(
+            &self.workspaces,
+            &self.app_settings,
+            workspace_id,
+            path,
+            display_hunk_id,
+        )
+        .await
     }
 
     async fn unstage_git_file(&self, workspace_id: String, path: String) -> Result<(), String> {

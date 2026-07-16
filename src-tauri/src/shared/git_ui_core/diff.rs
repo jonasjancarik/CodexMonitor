@@ -17,6 +17,7 @@ use crate::types::{AppSettings, GitCommitDiff, GitFileDiff, GitFileStatus, Works
 use crate::utils::{git_env_path, normalize_git_path, resolve_git_binary};
 
 use super::context::workspace_entry_for_id;
+use super::display_hunks::build_display_hunks;
 
 const INDEX_SKIP_WORKTREE_FLAG: u16 = 0x4000;
 const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
@@ -121,6 +122,86 @@ fn status_for_delta(status: git2::Delta) -> &'static str {
         git2::Delta::Typechange => "T",
         _ => "M",
     }
+}
+
+fn unstaged_diff_paths_with_git(repo_root: &Path, paths: &[String]) -> Option<HashSet<String>> {
+    if paths.is_empty() {
+        return Some(HashSet::new());
+    }
+
+    const MAX_PATHS_PER_BATCH: usize = 200;
+    let git_bin = resolve_git_binary().ok()?;
+    let mut changed_paths = HashSet::new();
+
+    for batch in paths.chunks(MAX_PATHS_PER_BATCH) {
+        let mut args = vec!["diff", "--no-color", "--name-only", "-z", "--"];
+        args.extend(batch.iter().map(String::as_str));
+
+        let output = std_command(&git_bin)
+            .args(args)
+            .current_dir(repo_root)
+            .env("PATH", git_env_path())
+            .output()
+            .ok()?;
+        if !(output.status.success() || output.status.code() == Some(1)) {
+            return None;
+        }
+
+        for raw_path in output.stdout.split(|byte| *byte == 0) {
+            if raw_path.is_empty() {
+                continue;
+            }
+            let path = String::from_utf8_lossy(raw_path);
+            changed_paths.insert(normalize_git_path(path.as_ref()));
+        }
+    }
+
+    Some(changed_paths)
+}
+
+fn source_diff_for_path(
+    repo_root: &Path,
+    path: &str,
+    cached: bool,
+    ignore_whitespace_changes: bool,
+    is_untracked_worktree_file: bool,
+) -> Option<String> {
+    let git_bin = resolve_git_binary().ok()?;
+    let mut args = vec!["diff"];
+    if is_untracked_worktree_file && !cached {
+        args.push("--no-index");
+        args.push("--no-color");
+        args.push("-U0");
+        if ignore_whitespace_changes {
+            args.push("-w");
+        }
+        args.push("--");
+        args.push(if cfg!(windows) { "NUL" } else { "/dev/null" });
+        args.push(path);
+    } else {
+        if cached {
+            args.push("--cached");
+        }
+        args.push("--no-color");
+        args.push("-U0");
+        if ignore_whitespace_changes {
+            args.push("-w");
+        }
+        args.push("--");
+        args.push(path);
+    }
+
+    let output = std_command(git_bin)
+        .args(args)
+        .current_dir(repo_root)
+        .env("PATH", git_env_path())
+        .output()
+        .ok()?;
+    if !(output.status.success() || output.status.code() == Some(1)) {
+        return None;
+    }
+
+    Some(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
 fn has_ignored_parent_directory(repo: &Repository, path: &Path) -> bool {
@@ -361,7 +442,12 @@ pub(super) async fn get_git_status_inner(
         .filter_map(|entry| entry.path().map(PathBuf::from))
         .filter(|path| !path.as_os_str().is_empty())
         .collect();
+    let normalized_status_paths: Vec<String> = status_paths
+        .iter()
+        .map(|path| normalize_git_path(path.to_string_lossy().as_ref()))
+        .collect();
     let ignored_paths = collect_ignored_paths_with_git(&repo, &status_paths);
+    let unstaged_diff_paths = unstaged_diff_paths_with_git(&repo_root, &normalized_status_paths);
 
     let head_tree = repo.head().ok().and_then(|head| head.peel_to_tree().ok());
     let index = repo.index().ok();
@@ -395,13 +481,22 @@ pub(super) async fn get_git_status_inner(
                 | Status::INDEX_RENAMED
                 | Status::INDEX_TYPECHANGE,
         );
-        let include_workdir = status.intersects(
+        let mut include_workdir = status.intersects(
             Status::WT_NEW
                 | Status::WT_MODIFIED
                 | Status::WT_DELETED
                 | Status::WT_RENAMED
                 | Status::WT_TYPECHANGE,
         );
+
+        // When the index is updated externally (for example via line-level staging),
+        // libgit2 can briefly report both staged and workdir status for a path.
+        // Verify actual unstaged diff content before keeping the workdir bucket.
+        if include_index && include_workdir {
+            if let Some(unstaged_diff_paths) = unstaged_diff_paths.as_ref() {
+                include_workdir = unstaged_diff_paths.contains(&normalized_path);
+            }
+        }
         let mut combined_additions = 0i64;
         let mut combined_deletions = 0i64;
 
@@ -520,6 +615,37 @@ pub(super) async fn get_git_diffs_inner(
             let is_image = old_image_mime.is_some() || new_image_mime.is_some();
             let is_deleted = delta.status() == git2::Delta::Deleted;
             let is_added = delta.status() == git2::Delta::Added;
+            let file_status = repo.status_file(display_path).unwrap_or(Status::empty());
+            let is_untracked_worktree_file =
+                file_status.contains(Status::WT_NEW) && !file_status.contains(Status::INDEX_NEW);
+            let staged_diff = source_diff_for_path(
+                &repo_root,
+                normalized_path.as_str(),
+                true,
+                ignore_whitespace_changes,
+                is_untracked_worktree_file,
+            )
+            .and_then(|diff| {
+                if diff.trim().is_empty() {
+                    None
+                } else {
+                    Some(diff)
+                }
+            });
+            let unstaged_diff = source_diff_for_path(
+                &repo_root,
+                normalized_path.as_str(),
+                false,
+                ignore_whitespace_changes,
+                is_untracked_worktree_file,
+            )
+            .and_then(|diff| {
+                if diff.trim().is_empty() {
+                    None
+                } else {
+                    Some(diff)
+                }
+            });
 
             let old_lines = if !is_added {
                 head_tree
@@ -569,6 +695,9 @@ pub(super) async fn get_git_diffs_inner(
                 results.push(GitFileDiff {
                     path: normalized_path,
                     diff: String::new(),
+                    staged_diff,
+                    unstaged_diff,
+                    display_hunks: Vec::new(),
                     old_lines: None,
                     new_lines: None,
                     is_binary: true,
@@ -595,9 +724,14 @@ pub(super) async fn get_git_diffs_inner(
             if content.trim().is_empty() {
                 continue;
             }
+            let display_hunks =
+                build_display_hunks(&content, staged_diff.as_deref(), unstaged_diff.as_deref());
             results.push(GitFileDiff {
                 path: normalized_path,
                 diff: content,
+                staged_diff,
+                unstaged_diff,
+                display_hunks,
                 old_lines,
                 new_lines,
                 is_binary: false,

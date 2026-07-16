@@ -26,6 +26,8 @@ import type {
   GitHubPullRequestDiff,
   GitHubPullRequestsResponse,
   GitLogResponse,
+  GitSelectionApplyResult,
+  GitSelectionLine,
   ReviewTarget,
 } from "../types";
 
@@ -326,6 +328,10 @@ export async function removeWorkspace(id: string): Promise<void> {
   return invoke("remove_workspace", { id });
 }
 
+export async function restartWorkspaceSession(id: string): Promise<string[]> {
+  return invoke<string[]>("restart_workspace_session", { id });
+}
+
 export async function removeWorktree(id: string): Promise<void> {
   return invoke("remove_worktree", { id });
 }
@@ -536,6 +542,18 @@ export async function respondToServerRequest(
   });
 }
 
+export async function respondToMcpElicitationRequest(
+  workspaceId: string,
+  requestId: number | string,
+  action: "accept" | "decline" | "cancel",
+) {
+  return invoke("respond_to_server_request", {
+    workspaceId,
+    requestId,
+    result: { action },
+  });
+}
+
 export async function respondToUserInputRequest(
   workspaceId: string,
   requestId: number | string,
@@ -640,6 +658,24 @@ export async function stageGitFile(workspaceId: string, path: string) {
 
 export async function stageGitAll(workspaceId: string): Promise<void> {
   return invoke("stage_git_all", { workspaceId });
+}
+
+export async function stageGitSelection(
+  workspaceId: string,
+  path: string,
+  op: "stage" | "unstage",
+  source: "unstaged" | "staged",
+  lines: GitSelectionLine[],
+): Promise<GitSelectionApplyResult> {
+  return invoke("stage_git_selection", { workspaceId, path, op, source, lines });
+}
+
+export async function applyGitDisplayHunk(
+  workspaceId: string,
+  path: string,
+  displayHunkId: string,
+): Promise<GitSelectionApplyResult> {
+  return invoke("apply_git_display_hunk", { workspaceId, path, displayHunkId });
 }
 
 export async function unstageGitFile(workspaceId: string, path: string) {

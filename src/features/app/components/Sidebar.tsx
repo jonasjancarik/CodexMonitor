@@ -148,6 +148,7 @@ type SidebarProps = {
   onDeleteWorktree: (workspaceId: string) => void;
   onLoadOlderThreads: (workspaceId: string) => void;
   onReloadWorkspaceThreads: (workspaceId: string) => void;
+  onRestartWorkspaceSession: (workspaceId: string) => void;
   workspaceDropTargetRef: RefObject<HTMLElement | null>;
   isWorkspaceDropActive: boolean;
   workspaceDropText: string;
@@ -209,6 +210,7 @@ export const Sidebar = memo(function Sidebar({
   onDeleteWorktree,
   onLoadOlderThreads,
   onReloadWorkspaceThreads,
+  onRestartWorkspaceSession,
   workspaceDropTargetRef,
   isWorkspaceDropActive,
   workspaceDropText,
@@ -250,6 +252,7 @@ export const Sidebar = memo(function Sidebar({
       isThreadPinned,
       onRenameThread,
       onReloadWorkspaceThreads,
+      onRestartWorkspaceSession,
       onDeleteWorkspace,
       onDeleteWorktree,
     });

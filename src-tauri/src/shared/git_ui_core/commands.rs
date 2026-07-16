@@ -397,6 +397,12 @@ async fn pull_with_default_strategy(repo_root: &Path) -> Result<(), String> {
     }
 }
 
+#[cfg(test)]
+pub(super) use super::selection::{
+    build_selected_patch, parse_zero_context_patch, parsed_patch_hunk_id, SelectionLineKey,
+    SelectionSourceFileContext,
+};
+
 pub(super) async fn stage_git_file_inner(
     workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
     workspace_id: String,
@@ -778,37 +784,5 @@ pub(super) async fn create_git_branch_inner(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{gh_repo_create_args, validate_branch_name};
-
-    #[test]
-    fn validate_branch_name_rejects_repeated_slashes() {
-        assert_eq!(
-            validate_branch_name("feature//oops"),
-            Err("Branch name cannot contain '//'.".to_string())
-        );
-    }
-
-    #[test]
-    fn gh_repo_create_args_include_source_remote_when_origin_missing() {
-        assert_eq!(
-            gh_repo_create_args("owner/repo", "--private", false),
-            vec![
-                "repo",
-                "create",
-                "owner/repo",
-                "--private",
-                "--source=.",
-                "--remote=origin"
-            ]
-        );
-    }
-
-    #[test]
-    fn gh_repo_create_args_omit_source_remote_when_origin_exists() {
-        assert_eq!(
-            gh_repo_create_args("owner/repo", "--public", true),
-            vec!["repo", "create", "owner/repo", "--public"]
-        );
-    }
-}
+#[path = "commands_tests.rs"]
+mod tests;

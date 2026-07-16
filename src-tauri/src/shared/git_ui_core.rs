@@ -6,7 +6,8 @@ use tokio::sync::Mutex;
 
 use crate::types::{
     AppSettings, GitCommitDiff, GitFileDiff, GitHubIssuesResponse, GitHubPullRequestComment,
-    GitHubPullRequestDiff, GitHubPullRequestsResponse, GitLogResponse, WorkspaceEntry,
+    GitHubPullRequestDiff, GitHubPullRequestsResponse, GitLogResponse, GitSelectionApplyResult,
+    GitSelectionLine, WorkspaceEntry,
 };
 
 #[path = "git_ui_core/commands.rs"]
@@ -15,10 +16,14 @@ mod commands;
 mod context;
 #[path = "git_ui_core/diff.rs"]
 mod diff;
+#[path = "git_ui_core/display_hunks.rs"]
+mod display_hunks;
 #[path = "git_ui_core/github.rs"]
 mod github;
 #[path = "git_ui_core/log.rs"]
 mod log;
+#[path = "git_ui_core/selection.rs"]
+mod selection;
 
 #[cfg(test)]
 #[path = "git_ui_core/tests.rs"]
@@ -114,6 +119,38 @@ pub(crate) async fn stage_git_all_core(
     workspace_id: String,
 ) -> Result<(), String> {
     commands::stage_git_all_inner(workspaces, workspace_id).await
+}
+
+pub(crate) async fn stage_git_selection_core(
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    workspace_id: String,
+    path: String,
+    op: String,
+    source: String,
+    lines: Vec<GitSelectionLine>,
+) -> Result<GitSelectionApplyResult, String> {
+    selection::stage_git_selection_inner(workspaces, workspace_id, path, op, source, lines).await
+}
+
+pub(crate) async fn apply_git_display_hunk_core(
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    app_settings: &Mutex<AppSettings>,
+    workspace_id: String,
+    path: String,
+    display_hunk_id: String,
+) -> Result<GitSelectionApplyResult, String> {
+    let ignore_whitespace_changes = {
+        let settings = app_settings.lock().await;
+        settings.git_diff_ignore_whitespace_changes
+    };
+    selection::apply_git_display_hunk_inner(
+        workspaces,
+        workspace_id,
+        path,
+        display_hunk_id,
+        ignore_whitespace_changes,
+    )
+    .await
 }
 
 pub(crate) async fn unstage_git_file_core(

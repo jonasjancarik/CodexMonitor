@@ -12,9 +12,10 @@ CodexMonitor is a Tauri app for orchestrating multiple Codex agents across local
 
 - Add and persist workspaces, group/sort them, and jump into recent agent activity from the home dashboard.
 - Spawn one `codex app-server` per workspace, resume threads, and track unread/running state.
+- Restart a workspace's Codex session from the sidebar when its app-server needs a clean reconnect.
 - Worktree and clone agents for isolated work; worktrees live under the app data directory (legacy `.codex-worktrees` supported).
 - Thread management: pin/rename/archive/copy, per-thread drafts, and stop/interrupt in-flight turns.
-- Optional remote backend (daemon) mode for running Codex on another machine.
+- Optional remote backend (daemon) mode for running Codex on another machine, with remote-path entry when adding workspaces.
 - Remote setup helpers for self-hosted connectivity (Tailscale detection/host bootstrap for TCP mode).
 
 ### Composer & Agent Controls
@@ -22,13 +23,13 @@ CodexMonitor is a Tauri app for orchestrating multiple Codex agents across local
 - Compose with image attachments (picker, drag/drop, paste) and configurable follow-up behavior (`Queue` vs `Steer` while a run is active).
 - Use `Shift+Cmd+Enter` (macOS) or `Shift+Ctrl+Enter` (Windows/Linux) to send the opposite follow-up action for a single message.
 - Autocomplete for skills (`$`), prompts (`/prompts:`), reviews (`/review`), and file paths (`@`).
-- Model picker, collaboration modes (when enabled), reasoning effort, access mode, and context usage ring.
+- Model and speed pickers (including Fast service tier), collaboration modes (when enabled), reasoning effort, access mode, and context usage ring.
 - Dictation with hold-to-talk shortcuts and live waveform (Whisper).
-- Render reasoning/tool/diff items and handle approval prompts.
+- Render reasoning/tool/diff items and handle approval or MCP server response prompts.
 
 ### Git & GitHub
 
-- Diff stats, staged/unstaged file diffs, revert/stage controls, and commit log.
+- Diff stats, staged/unstaged file diffs, file and hunk-level stage controls, revert controls, and commit log.
 - Branch list with checkout/create plus upstream ahead/behind counts.
 - GitHub Issues and Pull Requests via `gh` (lists, diffs, comments) and open commits/PRs in the browser.
 - PR composer: "Ask PR" to send PR context into a new agent thread.
@@ -327,10 +328,10 @@ src-tauri/
 Frontend calls live in `src/services/tauri.ts` and map to commands in `src-tauri/src/lib.rs`. The current surface includes:
 
 - Settings/config/files: `get_app_settings`, `update_app_settings`, `get_codex_config_path`, `get_config_model`, `file_read`, `file_write`, `codex_doctor`, `menu_set_accelerators`.
-- Workspaces/worktrees: `list_workspaces`, `is_workspace_path_dir`, `add_workspace`, `add_clone`, `add_worktree`, `worktree_setup_status`, `worktree_setup_mark_ran`, `rename_worktree`, `rename_worktree_upstream`, `apply_worktree_changes`, `update_workspace_settings`, `remove_workspace`, `remove_worktree`, `connect_workspace`, `list_workspace_files`, `read_workspace_file`, `open_workspace_in`, `get_open_app_icon`.
+- Workspaces/worktrees: `list_workspaces`, `is_workspace_path_dir`, `add_workspace`, `add_clone`, `add_worktree`, `worktree_setup_status`, `worktree_setup_mark_ran`, `rename_worktree`, `rename_worktree_upstream`, `apply_worktree_changes`, `update_workspace_settings`, `remove_workspace`, `remove_worktree`, `connect_workspace`, `restart_workspace_session`, `list_workspace_files`, `read_workspace_file`, `open_workspace_in`, `get_open_app_icon`.
 - Threads/turns/reviews: `start_thread`, `fork_thread`, `compact_thread`, `list_threads`, `resume_thread`, `archive_thread`, `set_thread_name`, `send_user_message`, `turn_interrupt`, `respond_to_server_request`, `start_review`, `remember_approval_rule`, `get_commit_message_prompt`, `generate_commit_message`, `generate_run_metadata`.
 - Account/models/collaboration: `model_list`, `account_rate_limits`, `account_read`, `skills_list`, `apps_list`, `collaboration_mode_list`, `codex_login`, `codex_login_cancel`, `list_mcp_server_status`.
-- Git/GitHub: `get_git_status`, `list_git_roots`, `get_git_diffs`, `get_git_log`, `get_git_commit_diff`, `get_git_remote`, `stage_git_file`, `stage_git_all`, `unstage_git_file`, `revert_git_file`, `revert_git_all`, `commit_git`, `push_git`, `pull_git`, `fetch_git`, `sync_git`, `list_git_branches`, `checkout_git_branch`, `create_git_branch`, `get_github_issues`, `get_github_pull_requests`, `get_github_pull_request_diff`, `get_github_pull_request_comments`.
+- Git/GitHub: `get_git_status`, `list_git_roots`, `get_git_diffs`, `get_git_log`, `get_git_commit_diff`, `get_git_remote`, `stage_git_file`, `stage_git_all`, `stage_git_selection`, `apply_git_display_hunk`, `unstage_git_file`, `revert_git_file`, `revert_git_all`, `commit_git`, `push_git`, `pull_git`, `fetch_git`, `sync_git`, `list_git_branches`, `checkout_git_branch`, `create_git_branch`, `get_github_issues`, `get_github_pull_requests`, `get_github_pull_request_diff`, `get_github_pull_request_comments`.
 - Prompts: `prompts_list`, `prompts_create`, `prompts_update`, `prompts_delete`, `prompts_move`, `prompts_workspace_dir`, `prompts_global_dir`.
 - Terminal/dictation/notifications/usage: `terminal_open`, `terminal_write`, `terminal_resize`, `terminal_close`, `dictation_model_status`, `dictation_download_model`, `dictation_cancel_download`, `dictation_remove_model`, `dictation_request_permission`, `dictation_start`, `dictation_stop`, `dictation_cancel`, `send_notification_fallback`, `is_macos_debug_build`, `local_usage_snapshot`.
 - Remote backend helpers: `tailscale_status`, `tailscale_daemon_command_preview`, `tailscale_daemon_start`, `tailscale_daemon_stop`, `tailscale_daemon_status`.
