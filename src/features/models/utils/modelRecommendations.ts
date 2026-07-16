@@ -1,9 +1,9 @@
 import type { ModelOption } from "@/types";
 
 const RECOMMENDED_EFFORTS = {
-  luna: new Set(["low", "medium", "high", "xhigh", "max"]),
-  sol: new Set(["xhigh"]),
-  terra: new Set(["max"]),
+  luna: new Set(["medium", "high", "xhigh", "max"]),
+  sol: new Set(["high"]),
+  terra: new Set(["low", "max"]),
 } as const;
 
 type RecommendedModelFamily = keyof typeof RECOMMENDED_EFFORTS;

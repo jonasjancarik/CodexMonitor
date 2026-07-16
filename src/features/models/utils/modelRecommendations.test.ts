@@ -16,26 +16,34 @@ function model(modelId: string, displayName = modelId): ModelOption {
 }
 
 describe("isRecommendedModelEffort", () => {
-  it.each(["low", "medium", "high", "xhigh", "max"])(
+  it.each(["medium", "high", "xhigh", "max"])(
     "recommends GPT-5.6 Luna at %s effort",
     (effort) => {
       expect(isRecommendedModelEffort(model("gpt-5.6-luna"), effort)).toBe(true);
     },
   );
 
-  it("recommends only Extra High for GPT-5.6 Sol", () => {
+  it("does not recommend GPT-5.6 Luna at Low effort", () => {
+    expect(isRecommendedModelEffort(model("gpt-5.6-luna"), "low")).toBe(false);
+  });
+
+  it("recommends only High for GPT-5.6 Sol", () => {
     const sol = model("gpt-5.6-sol");
 
-    expect(isRecommendedModelEffort(sol, "xhigh")).toBe(true);
+    expect(isRecommendedModelEffort(sol, "high")).toBe(true);
     expect(isRecommendedModelEffort(sol, "medium")).toBe(false);
-    expect(isRecommendedModelEffort(sol, "high")).toBe(false);
+    expect(isRecommendedModelEffort(sol, "xhigh")).toBe(false);
     expect(isRecommendedModelEffort(sol, "max")).toBe(false);
     expect(isRecommendedModelEffort(sol, "ultra")).toBe(false);
   });
 
-  it("uses the corrected Max label for the Terra recommendation", () => {
+  it("recommends Low and corrected-label Max for GPT-5.6 Terra", () => {
     const terra = model("gpt-5.6-terra");
 
+    expect(isRecommendedModelEffort(terra, "low")).toBe(true);
+    expect(isRecommendedModelEffort(terra, "medium")).toBe(false);
+    expect(isRecommendedModelEffort(terra, "high")).toBe(false);
+    expect(isRecommendedModelEffort(terra, "xhigh")).toBe(false);
     expect(isRecommendedModelEffort(terra, "max")).toBe(true);
     expect(isRecommendedModelEffort(terra, "ultra")).toBe(false);
   });

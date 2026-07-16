@@ -220,7 +220,7 @@ describe("Composer send triggers", () => {
         models={[
           modelOption("gpt-5.6-luna", "GPT-5.6 Luna", ["low", "high"]),
           modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["high", "xhigh"]),
-          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["max", "ultra"]),
+          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["low", "max"]),
         ]}
         selectedModelId="gpt-5.6-sol"
         reasoningOptions={["high", "xhigh"]}
@@ -238,12 +238,17 @@ describe("Composer send triggers", () => {
     );
     expect(
       screen.getByRole("radio", {
-        name: "GPT-5.6 Luna, Low reasoning, recommended value",
+        name: "GPT-5.6 Luna, High reasoning, recommended value",
       }),
     ).toBeTruthy();
     expect(
       screen.getByRole("radio", {
-        name: "GPT-5.6 Sol, Extra High reasoning, recommended value",
+        name: "GPT-5.6 Sol, High reasoning, recommended value",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("radio", {
+        name: "GPT-5.6 Terra, Low reasoning, recommended value",
       }),
     ).toBeTruthy();
     expect(
@@ -253,7 +258,12 @@ describe("Composer send triggers", () => {
     ).toBeTruthy();
     expect(
       screen.queryByRole("radio", {
-        name: /GPT-5.6 Sol, High reasoning, recommended value/,
+        name: /GPT-5.6 Luna, Low reasoning, recommended value/,
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("radio", {
+        name: /GPT-5.6 Sol, Extra High reasoning, recommended value/,
       }),
     ).toBeNull();
   });
