@@ -884,11 +884,183 @@
   position: absolute;
   left: 0;
   bottom: calc(100% + 8px);
-  width: min(280px, calc(100vw - 32px));
+  width: min(540px, calc(100vw - 24px));
+  max-height: min(560px, calc(100vh - 120px));
   padding: 10px;
   display: grid;
   gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
   z-index: 45;
+}
+
+.composer-model-grid-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.composer-model-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(70px, 1.55fr)
+    repeat(var(--composer-model-columns), minmax(34px, 1fr));
+  align-items: center;
+  gap: 4px;
+}
+
+.composer-model-grid-heading {
+  min-width: 0;
+  padding: 0 2px 3px;
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.05;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.composer-model-grid-model-heading {
+  padding-left: 6px;
+  text-align: left;
+}
+
+.composer-model-grid--rows {
+  row-gap: 4px;
+}
+
+.composer-model-grid-model {
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 6px;
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-model-grid-model.is-active {
+  color: var(--text-emphasis);
+}
+
+.composer-model-grid-cell {
+  position: relative;
+  min-width: 0;
+}
+
+.composer-model-grid-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.composer-model-grid-cell-label {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--cm-surface-panel-strong);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-dur-fast) var(--ds-ease-out-soft),
+    border-color var(--ds-dur-fast) var(--ds-ease-out-soft),
+    color var(--ds-dur-fast) var(--ds-ease-out-soft);
+}
+
+.composer-model-grid-input:not(:disabled) + .composer-model-grid-cell-label:hover {
+  border-color: var(--border-accent-soft);
+  background: var(--surface-hover);
+  color: var(--text-stronger);
+}
+
+.composer-model-grid-input:focus-visible + .composer-model-grid-cell-label {
+  outline: 2px solid var(--border-accent);
+  outline-offset: 1px;
+}
+
+.composer-model-grid-cell-label.is-active {
+  border-color: var(--border-accent);
+  background: var(--surface-active);
+  color: var(--text-emphasis);
+}
+
+.composer-model-grid-cell-label.is-disabled {
+  background: color-mix(in srgb, var(--surface-control-disabled) 50%, transparent);
+  color: var(--text-fainter);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.composer-model-grid-older {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.composer-model-grid-older-toggle {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.composer-model-grid-older-toggle:hover,
+.composer-model-grid-older-toggle:focus-visible {
+  background: var(--surface-hover);
+  color: var(--text-strong);
+}
+
+.composer-model-grid-older-toggle:focus-visible {
+  outline: 2px solid var(--border-accent);
+  outline-offset: 1px;
+}
+
+.composer-model-grid-older-toggle svg {
+  margin-left: auto;
+  transition: transform var(--ds-dur-fast) var(--ds-ease-out-soft);
+}
+
+.composer-model-grid-older-toggle svg.is-open {
+  transform: rotate(180deg);
+}
+
+.composer-model-grid-older-count {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--cm-surface-panel-strong);
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.composer-model-grid-empty {
+  padding: 10px 8px;
+  color: var(--text-faint);
+  font-size: 12px;
 }
 
 .composer-model-settings-section {

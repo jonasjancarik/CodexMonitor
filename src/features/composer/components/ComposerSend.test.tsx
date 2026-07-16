@@ -31,14 +31,21 @@ vi.mock("../../../utils/platformPaths", async () => {
   };
 });
 
-function modelOption(model: string, displayName = model): ModelOption {
+function modelOption(
+  model: string,
+  displayName = model,
+  efforts: string[] = [],
+): ModelOption {
   return {
     id: model,
     model,
     displayName,
     description: "",
-    supportedReasoningEfforts: [],
-    defaultReasoningEffort: null,
+    supportedReasoningEfforts: efforts.map((reasoningEffort) => ({
+      reasoningEffort,
+      description: "",
+    })),
+    defaultReasoningEffort: efforts[0] ?? null,
     isDefault: false,
   };
 }
@@ -56,8 +63,10 @@ type HarnessProps = {
   steerAvailable?: boolean;
   models?: ModelOption[];
   selectedModelId?: string | null;
+  onSelectModel?: (id: string) => void;
   reasoningOptions?: string[];
   selectedEffort?: string | null;
+  onSelectEffort?: (effort: string | null) => void;
   reasoningSupported?: boolean;
   selectedServiceTier?: ServiceTier | null;
   onSelectServiceTier?: (tier: ServiceTier | null) => void;
@@ -71,8 +80,10 @@ function ComposerHarness({
   steerAvailable = false,
   models = [],
   selectedModelId = null,
+  onSelectModel = () => {},
   reasoningOptions = [],
   selectedEffort = null,
+  onSelectEffort = () => {},
   reasoningSupported = false,
   selectedServiceTier = null,
   onSelectServiceTier = () => {},
@@ -95,10 +106,10 @@ function ComposerHarness({
       onSelectCollaborationMode={() => {}}
       models={models}
       selectedModelId={selectedModelId}
-      onSelectModel={() => {}}
+      onSelectModel={onSelectModel}
       reasoningOptions={reasoningOptions}
       selectedEffort={selectedEffort}
-      onSelectEffort={() => {}}
+      onSelectEffort={onSelectEffort}
       selectedServiceTier={selectedServiceTier}
       onSelectServiceTier={onSelectServiceTier}
       reasoningSupported={reasoningSupported}
@@ -192,6 +203,59 @@ describe("Composer send triggers", () => {
     fireEvent.click(screen.getByRole("menuitemradio", { name: /Fast/i }));
 
     expect(onSelectServiceTier).toHaveBeenCalledWith("fast");
+  });
+
+  it("selects model and reasoning from a grid and keeps older models collapsed", () => {
+    const onSelectModel = vi.fn();
+    const onSelectEffort = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={() => {}}
+        models={[
+          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["low", "high"]),
+          modelOption("gpt-5.5-codex", "GPT-5.5 Codex", ["low", "xhigh"]),
+        ]}
+        selectedModelId="gpt-5.6-terra"
+        onSelectModel={onSelectModel}
+        reasoningOptions={["low", "high"]}
+        selectedEffort="high"
+        onSelectEffort={onSelectEffort}
+        reasoningSupported={true}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+
+    expect(
+      screen.getByRole("radiogroup", { name: "Model and reasoning effort" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("radio", {
+        name: "GPT-5.5 Codex, Low reasoning",
+      }),
+    ).toBeNull();
+    expect(
+      (
+        screen.getByRole("radio", {
+          name: "GPT-5.6 Terra, Extra High reasoning",
+        }) as HTMLInputElement
+      ).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: /Older models/ }));
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "GPT-5.5 Codex, Extra High reasoning",
+      }),
+    );
+
+    expect(onSelectModel).toHaveBeenCalledWith("gpt-5.5-codex");
+    expect(onSelectEffort).toHaveBeenCalledWith("xhigh");
+    expect(
+      screen.queryByRole("dialog", {
+        name: "Choose model, reasoning, and speed",
+      }),
+    ).toBeNull();
   });
 
   it("blurs the textarea after Enter send on mobile", () => {

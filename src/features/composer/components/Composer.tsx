@@ -69,7 +69,7 @@ type ComposerProps = {
   onSelectModel: (id: string) => void;
   reasoningOptions: string[];
   selectedEffort: string | null;
-  onSelectEffort: (effort: string) => void;
+  onSelectEffort: (effort: string | null) => void;
   selectedServiceTier: ServiceTier | null;
   onSelectServiceTier: (tier: ServiceTier | null) => void;
   reasoningSupported: boolean;

@@ -226,6 +226,25 @@
   padding: 0 16px 0 0;
 }
 
+.workspace-home-model-picker-trigger {
+  min-height: 31px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-muted);
+  border-radius: 10px;
+  background: var(--surface-card);
+  font-size: 12px;
+}
+
+.workspace-home-model-picker-trigger:hover,
+.workspace-home-model-picker-trigger.is-open {
+  border-color: var(--border-strong);
+  background: var(--surface-card-strong);
+}
+
+.workspace-home-model-picker-popover {
+  left: 0;
+}
+
 .workspace-home-dropdown {
   left: 0;
 }

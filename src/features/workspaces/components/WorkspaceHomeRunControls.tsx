@@ -7,10 +7,14 @@ import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import Cpu from "lucide-react/dist/esm/icons/cpu";
 import {
+  MenuTrigger,
   PopoverMenuItem,
+  PopoverSurface,
   SplitActionMenu,
 } from "../../design-system/components/popover/PopoverPrimitives";
 import { useMenuController } from "../../app/hooks/useMenuController";
+import { ComposerModelGrid } from "../../composer/components/ComposerModelGrid";
+import { formatReasoningEffortLabel } from "../../models/utils/reasoningEffort";
 import {
   buildModelSummary,
   INSTANCE_OPTIONS,
@@ -32,7 +36,7 @@ type WorkspaceHomeRunControlsProps = {
   onSelectCollaborationMode: (id: string | null) => void;
   reasoningOptions: string[];
   selectedEffort: string | null;
-  onSelectEffort: (effort: string) => void;
+  onSelectEffort: (effort: string | null) => void;
   reasoningSupported: boolean;
   isSubmitting: boolean;
 };
@@ -75,6 +79,9 @@ export function WorkspaceHomeRunControls({
     ? models.find((model) => model.id === selectedModelId) ?? null
     : null;
   const selectedModelLabel = resolveModelLabel(selectedModel);
+  const selectedEffortLabel = formatReasoningEffortLabel(
+    selectedEffort ?? reasoningOptions[0] ?? "default",
+  );
   const modelSummary = buildModelSummary(models, modelSelections);
   const showRunMode = (workspaceKind ?? "main") !== "worktree";
   const runModeLabel = runMode === "local" ? "Local" : "Worktree";
@@ -144,91 +151,125 @@ export function WorkspaceHomeRunControls({
         </SplitActionMenu>
       )}
 
-      <SplitActionMenu
-        containerRef={modelsRef}
-        className="open-app-menu workspace-home-control"
-        buttonGroupClassName="open-app-button"
-        actionButton={
-          <button
-            type="button"
-            className="ghost open-app-action"
+      {runMode === "local" ? (
+        <div
+          className="composer-model-settings workspace-home-model-picker"
+          ref={modelsRef}
+        >
+          <MenuTrigger
+            isOpen={modelsOpen}
+            popupRole="dialog"
+            activeClassName="is-open"
+            className="composer-model-settings-trigger workspace-home-model-picker-trigger"
+            aria-label="Model settings"
+            title="Model settings"
+            disabled={isSubmitting}
             onClick={toggleModelsMenu}
-            aria-label="Select models"
-            data-tauri-drag-region="false"
           >
-            <span className="open-app-label">
-              {runMode === "local" ? selectedModelLabel : modelSummary}
+            <span className="composer-model-settings-trigger-label">
+              <span className="composer-model-settings-trigger-model">
+                {selectedModelLabel}
+              </span>
+              <span className="composer-model-settings-trigger-effort">
+                {selectedEffortLabel}
+              </span>
             </span>
-          </button>
-        }
-        isOpen={modelsOpen}
-        onToggle={toggleModelsMenu}
-        toggleClassName="ghost open-app-toggle"
-        toggleAriaLabel="Toggle models menu"
-        toggleIcon={<ChevronDown size={14} aria-hidden />}
-        popoverClassName="open-app-dropdown workspace-home-dropdown workspace-home-model-dropdown"
-        popoverRole="menu"
-      >
-        {models.length === 0 && (
-          <div className="workspace-home-empty">
-            Connect this workspace to load available models.
-          </div>
-        )}
-        {models.map((model) => {
-          const isSelected =
-            runMode === "local"
-              ? model.id === selectedModelId
-              : Boolean(modelSelections[model.id]);
-          const count = modelSelections[model.id] ?? 1;
-          return (
-            <div
-              key={model.id}
-              className={`workspace-home-model-option${isSelected ? " is-active" : ""}`}
+            <ChevronDown size={13} strokeWidth={1.8} aria-hidden />
+          </MenuTrigger>
+          {modelsOpen && (
+            <PopoverSurface
+              className="composer-model-settings-popover workspace-home-model-picker-popover"
+              role="dialog"
+              aria-label="Choose model and reasoning"
             >
-              <PopoverMenuItem
-                className="open-app-option workspace-home-model-toggle"
-                onClick={() => {
-                  if (runMode === "local") {
-                    onSelectModel(model.id);
-                    closeModels();
-                    return;
-                  }
-                  onToggleModel(model.id);
+              <ComposerModelGrid
+                disabled={isSubmitting}
+                models={models}
+                selectedModelId={selectedModelId}
+                selectedEffort={selectedEffort}
+                selectedModelEfforts={reasoningOptions}
+                onSelect={(modelId, effort) => {
+                  onSelectModel(modelId);
+                  onSelectEffort(effort);
+                  closeModels();
                 }}
-                icon={<Cpu className="workspace-home-mode-icon" aria-hidden />}
-                active={isSelected}
-              >
-                {resolveModelLabel(model)}
-              </PopoverMenuItem>
-              {runMode === "worktree" && (
-                <>
-                  <div className="workspace-home-model-meta" aria-hidden>
-                    <span>{count}x</span>
-                    <ChevronRight size={14} />
-                  </div>
-                  <div className="workspace-home-model-submenu ds-popover">
-                    {INSTANCE_OPTIONS.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={`workspace-home-model-submenu-item${
-                          option === count ? " is-active" : ""
-                        }`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onModelCountChange(model.id, option);
-                        }}
-                      >
-                        {option}x
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              />
+            </PopoverSurface>
+          )}
+        </div>
+      ) : (
+        <SplitActionMenu
+          containerRef={modelsRef}
+          className="open-app-menu workspace-home-control"
+          buttonGroupClassName="open-app-button"
+          actionButton={
+            <button
+              type="button"
+              className="ghost open-app-action"
+              onClick={toggleModelsMenu}
+              aria-label="Select models"
+              data-tauri-drag-region="false"
+            >
+              <span className="open-app-label">{modelSummary}</span>
+            </button>
+          }
+          isOpen={modelsOpen}
+          onToggle={toggleModelsMenu}
+          toggleClassName="ghost open-app-toggle"
+          toggleAriaLabel="Toggle models menu"
+          toggleIcon={<ChevronDown size={14} aria-hidden />}
+          popoverClassName="open-app-dropdown workspace-home-dropdown workspace-home-model-dropdown"
+          popoverRole="menu"
+        >
+          {models.length === 0 && (
+            <div className="workspace-home-empty">
+              Connect this workspace to load available models.
             </div>
-          );
-        })}
-      </SplitActionMenu>
+          )}
+          {models.map((model) => {
+            const isSelected = Boolean(modelSelections[model.id]);
+            const count = modelSelections[model.id] ?? 1;
+            return (
+              <div
+                key={model.id}
+                className={`workspace-home-model-option${
+                  isSelected ? " is-active" : ""
+                }`}
+              >
+                <PopoverMenuItem
+                  className="open-app-option workspace-home-model-toggle"
+                  onClick={() => onToggleModel(model.id)}
+                  icon={<Cpu className="workspace-home-mode-icon" aria-hidden />}
+                  active={isSelected}
+                >
+                  {resolveModelLabel(model)}
+                </PopoverMenuItem>
+                <div className="workspace-home-model-meta" aria-hidden>
+                  <span>{count}x</span>
+                  <ChevronRight size={14} />
+                </div>
+                <div className="workspace-home-model-submenu ds-popover">
+                  {INSTANCE_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`workspace-home-model-submenu-item${
+                        option === count ? " is-active" : ""
+                      }`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onModelCountChange(model.id, option);
+                      }}
+                    >
+                      {option}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </SplitActionMenu>
+      )}
       {collaborationModes.length > 0 && (
         <div className="composer-select-wrap workspace-home-control">
           <div className="open-app-button">
@@ -258,52 +299,56 @@ export function WorkspaceHomeRunControls({
           </div>
         </div>
       )}
-      <div className="composer-select-wrap workspace-home-control">
-        <div className="open-app-button">
-          <span className="composer-icon" aria-hidden>
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M8.5 4.5a3.5 3.5 0 0 0-3.46 4.03A4 4 0 0 0 6 16.5h2"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-              <path
-                d="M15.5 4.5a3.5 3.5 0 0 1 3.46 4.03A4 4 0 0 1 18 16.5h-2"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-              <path
-                d="M9 12h6"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-              <path
-                d="M12 12v6"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
-          <select
-            className="composer-select composer-select--effort"
-            aria-label="Thinking mode"
-            value={selectedEffort ?? ""}
-            onChange={(event) => onSelectEffort(event.target.value)}
-            disabled={isSubmitting || !reasoningSupported}
-          >
-            {reasoningOptions.length === 0 && <option value="">Default</option>}
-            {reasoningOptions.map((effortOption) => (
-              <option key={effortOption} value={effortOption}>
-                {effortOption}
-              </option>
-            ))}
-          </select>
+      {runMode === "worktree" && (
+        <div className="composer-select-wrap workspace-home-control">
+          <div className="open-app-button">
+            <span className="composer-icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M8.5 4.5a3.5 3.5 0 0 0-3.46 4.03A4 4 0 0 0 6 16.5h2"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M15.5 4.5a3.5 3.5 0 0 1 3.46 4.03A4 4 0 0 1 18 16.5h-2"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M9 12h6"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M12 12v6"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+            <select
+              className="composer-select composer-select--effort"
+              aria-label="Thinking mode"
+              value={selectedEffort ?? ""}
+              onChange={(event) => onSelectEffort(event.target.value)}
+              disabled={isSubmitting || !reasoningSupported}
+            >
+              {reasoningOptions.length === 0 && (
+                <option value="">Default</option>
+              )}
+              {reasoningOptions.map((effortOption) => (
+                <option key={effortOption} value={effortOption}>
+                  {formatReasoningEffortLabel(effortOption)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

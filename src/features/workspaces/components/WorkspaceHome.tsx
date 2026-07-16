@@ -59,7 +59,7 @@ type WorkspaceHomeProps = {
   onSelectCollaborationMode: (id: string | null) => void;
   reasoningOptions: string[];
   selectedEffort: string | null;
-  onSelectEffort: (effort: string) => void;
+  onSelectEffort: (effort: string | null) => void;
   reasoningSupported: boolean;
   error: string | null;
   isSubmitting: boolean;

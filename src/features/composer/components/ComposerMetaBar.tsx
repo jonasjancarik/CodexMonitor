@@ -12,28 +12,9 @@ import {
   PopoverSurface,
 } from "../../design-system/components/popover/PopoverPrimitives";
 import { modelSupportsFastServiceTier } from "../../models/utils/serviceTiers";
+import { formatReasoningEffortLabel } from "../../models/utils/reasoningEffort";
 import type { CodexArgsOption } from "../../threads/utils/codexArgsProfiles";
-
-const EFFORT_LABELS: Record<string, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  xhigh: "Extra High",
-};
-
-function formatEffortLabel(effort: string | null): string {
-  if (!effort) {
-    return "Default";
-  }
-  return (
-    EFFORT_LABELS[effort] ??
-    effort
-      .split(/[-_\s]+/)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ")
-  );
-}
+import { ComposerModelGrid } from "./ComposerModelGrid";
 
 function shortModelLabel(model: ModelOption | null): string {
   const label = model?.displayName || model?.model || "Model";
@@ -54,7 +35,7 @@ type ComposerMetaBarProps = {
   onSelectModel: (id: string) => void;
   reasoningOptions: string[];
   selectedEffort: string | null;
-  onSelectEffort: (effort: string) => void;
+  onSelectEffort: (effort: string | null) => void;
   selectedServiceTier: ServiceTier | null;
   onSelectServiceTier: (tier: ServiceTier | null) => void;
   reasoningSupported: boolean;
@@ -92,7 +73,9 @@ export function ComposerMetaBar({
   const modelSettingsMenu = useMenuController();
   const selectedModelLabel = shortModelLabel(selectedModel);
   const selectedEffortLabel = reasoningSupported
-    ? formatEffortLabel(selectedEffort ?? reasoningOptions[0] ?? null)
+    ? formatReasoningEffortLabel(
+        selectedEffort ?? reasoningOptions[0] ?? "default",
+      )
     : "Default";
   const contextWindow = contextUsage?.modelContextWindow ?? null;
   const lastTokens = contextUsage?.last.totalTokens ?? 0;
@@ -120,11 +103,8 @@ export function ComposerMetaBar({
   const showSpeedSection = supportsFastTier || selectedServiceTier === "fast";
 
   const closeModelSettings = () => modelSettingsMenu.close();
-  const selectModel = (id: string) => {
+  const selectModelEffort = (id: string, effort: string | null) => {
     onSelectModel(id);
-    closeModelSettings();
-  };
-  const selectEffort = (effort: string) => {
     onSelectEffort(effort);
     closeModelSettings();
   };
@@ -206,6 +186,7 @@ export function ComposerMetaBar({
         >
           <MenuTrigger
             isOpen={modelSettingsMenu.isOpen}
+            popupRole="dialog"
             activeClassName="is-open"
             className="composer-model-settings-trigger"
             aria-label="Model settings"
@@ -213,6 +194,11 @@ export function ComposerMetaBar({
             disabled={disabled}
             onClick={modelSettingsMenu.toggle}
           >
+            {selectedServiceTier === "fast" && (
+              <span className="composer-fast-indicator" aria-hidden>
+                <Zap size={11} strokeWidth={2} />
+              </span>
+            )}
             <span className="composer-model-settings-trigger-label">
               <span className="composer-model-settings-trigger-model">
                 {selectedModelLabel}
@@ -226,95 +212,17 @@ export function ComposerMetaBar({
           {modelSettingsMenu.isOpen && (
             <PopoverSurface
               className="composer-model-settings-popover"
-              role="menu"
+              role="dialog"
+              aria-label="Choose model, reasoning, and speed"
             >
-              <div className="composer-model-settings-section">
-                <div className="composer-model-settings-heading">Reasoning</div>
-                {reasoningOptions.length === 0 && (
-                  <button
-                    type="button"
-                    className="composer-model-settings-item is-disabled"
-                    role="menuitem"
-                    disabled
-                  >
-                    <span className="composer-model-settings-item-copy">
-                      <span className="composer-model-settings-item-title">
-                        Default
-                      </span>
-                    </span>
-                  </button>
-                )}
-                {reasoningOptions.map((effort) => {
-                  const active = selectedEffort === effort;
-                  return (
-                    <button
-                      key={effort}
-                      type="button"
-                      className={`composer-model-settings-item${
-                        active ? " is-active" : ""
-                      }`}
-                      role="menuitemradio"
-                      aria-checked={active}
-                      disabled={disabled || !reasoningSupported}
-                      onClick={() => selectEffort(effort)}
-                    >
-                      <span className="composer-model-settings-item-copy">
-                        <span className="composer-model-settings-item-title">
-                          {formatEffortLabel(effort)}
-                        </span>
-                      </span>
-                      {active && (
-                        <Check size={15} strokeWidth={1.8} aria-hidden />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="composer-model-settings-divider" />
-
-              <div className="composer-model-settings-section">
-                <div className="composer-model-settings-heading">Model</div>
-                {models.length === 0 && (
-                  <button
-                    type="button"
-                    className="composer-model-settings-item is-disabled"
-                    role="menuitem"
-                    disabled
-                  >
-                    <span className="composer-model-settings-item-copy">
-                      <span className="composer-model-settings-item-title">
-                        No models
-                      </span>
-                    </span>
-                  </button>
-                )}
-                {models.map((model) => {
-                  const active = model.id === selectedModelId;
-                  return (
-                    <button
-                      key={model.id}
-                      type="button"
-                      className={`composer-model-settings-item${
-                        active ? " is-active" : ""
-                      }`}
-                      role="menuitemradio"
-                      aria-checked={active}
-                      disabled={disabled}
-                      onClick={() => selectModel(model.id)}
-                    >
-                      <span className="composer-model-settings-item-copy">
-                        <span className="composer-model-settings-item-title">
-                          {model.displayName || model.model}
-                        </span>
-                      </span>
-                      {active && (
-                        <Check size={15} strokeWidth={1.8} aria-hidden />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              <ComposerModelGrid
+                disabled={disabled}
+                models={models}
+                selectedModelId={selectedModelId}
+                selectedEffort={selectedEffort}
+                selectedModelEfforts={reasoningOptions}
+                onSelect={selectModelEffort}
+              />
 
               {showSpeedSection && (
                 <>
