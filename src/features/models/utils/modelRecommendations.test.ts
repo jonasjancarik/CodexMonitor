@@ -27,17 +27,17 @@ describe("isRecommendedModelEffort", () => {
     expect(isRecommendedModelEffort(model("gpt-5.6-luna"), "low")).toBe(false);
   });
 
-  it("recommends only High for GPT-5.6 Sol", () => {
+  it("recommends High and Max for GPT-5.6 Sol", () => {
     const sol = model("gpt-5.6-sol");
 
     expect(isRecommendedModelEffort(sol, "high")).toBe(true);
     expect(isRecommendedModelEffort(sol, "medium")).toBe(false);
     expect(isRecommendedModelEffort(sol, "xhigh")).toBe(false);
-    expect(isRecommendedModelEffort(sol, "max")).toBe(false);
+    expect(isRecommendedModelEffort(sol, "max")).toBe(true);
     expect(isRecommendedModelEffort(sol, "ultra")).toBe(false);
   });
 
-  it("recommends only corrected-label Max for GPT-5.6 Terra", () => {
+  it("recommends Max and Ultra for GPT-5.6 Terra", () => {
     const terra = model("gpt-5.6-terra");
 
     expect(isRecommendedModelEffort(terra, "low")).toBe(false);
@@ -45,7 +45,7 @@ describe("isRecommendedModelEffort", () => {
     expect(isRecommendedModelEffort(terra, "high")).toBe(false);
     expect(isRecommendedModelEffort(terra, "xhigh")).toBe(false);
     expect(isRecommendedModelEffort(terra, "max")).toBe(true);
-    expect(isRecommendedModelEffort(terra, "ultra")).toBe(false);
+    expect(isRecommendedModelEffort(terra, "ultra")).toBe(true);
   });
 
   it("does not recommend unrelated or older models", () => {

@@ -219,8 +219,8 @@ describe("Composer send triggers", () => {
         onSend={() => {}}
         models={[
           modelOption("gpt-5.6-luna", "GPT-5.6 Luna", ["low", "high"]),
-          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["high", "xhigh"]),
-          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["low", "max"]),
+          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["high", "xhigh", "max"]),
+          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["low", "max", "ultra"]),
         ]}
         selectedModelId="gpt-5.6-sol"
         reasoningOptions={["high", "xhigh"]}
@@ -248,7 +248,17 @@ describe("Composer send triggers", () => {
     ).toBeTruthy();
     expect(
       screen.getByRole("radio", {
+        name: "GPT-5.6 Sol, Max reasoning, recommended value",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("radio", {
         name: "GPT-5.6 Terra, Max reasoning, recommended value",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("radio", {
+        name: "GPT-5.6 Terra, Ultra reasoning, recommended value",
       }),
     ).toBeTruthy();
     expect(
