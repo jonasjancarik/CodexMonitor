@@ -89,4 +89,36 @@ describe("parseModelListResponse", () => {
     ]);
     expect(model.defaultServiceTier).toBeNull();
   });
+
+  it("merges service tiers with additional speed tiers", () => {
+    const response = {
+      result: {
+        data: [
+          {
+            id: "gpt-5.6-sol",
+            model: "gpt-5.6-sol",
+            serviceTiers: [
+              {
+                id: "priority",
+                name: "Fast",
+                description: "1.5x speed, increased usage",
+              },
+            ],
+            additionalSpeedTiers: ["fast"],
+          },
+        ],
+      },
+    };
+
+    const [model] = parseModelListResponse(response);
+
+    expect(model.serviceTiers).toEqual([
+      {
+        id: "priority",
+        name: "Fast",
+        description: "1.5x speed, increased usage",
+      },
+      { id: "fast", name: "fast", description: "" },
+    ]);
+  });
 });
