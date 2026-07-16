@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isMobilePlatform } from "../../../utils/platformPaths";
@@ -19,6 +20,10 @@ vi.mock("../../../services/dragDrop", () => ({
 
 vi.mock("@tauri-apps/api/core", () => ({
   convertFileSrc: (path: string) => `tauri://${path}`,
+}));
+
+vi.mock("@tauri-apps/plugin-opener", () => ({
+  openUrl: vi.fn(),
 }));
 
 vi.mock("../../../utils/platformPaths", async () => {
@@ -158,7 +163,7 @@ describe("Composer send triggers", () => {
     expect(onSend).toHaveBeenCalledWith("from button", [], undefined, "default");
   });
 
-  it("shows and changes speed from the model settings popover", () => {
+  it("turns Fast off from the compact speed switch", () => {
     const onSend = vi.fn();
     const onSelectServiceTier = vi.fn();
     render(
@@ -178,8 +183,11 @@ describe("Composer send triggers", () => {
 
     expect(screen.getByText("Speed")).toBeTruthy();
     expect(screen.getByText("1.5x speed, increased usage")).toBeTruthy();
+    expect(screen.queryByText("Standard")).toBeNull();
 
-    fireEvent.click(screen.getByRole("menuitemradio", { name: /Standard/i }));
+    const fastSwitch = screen.getByRole("switch", { name: /Fast/i });
+    expect(fastSwitch.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(fastSwitch);
 
     expect(onSelectServiceTier).toHaveBeenCalledWith(null);
   });
@@ -200,9 +208,54 @@ describe("Composer send triggers", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
-    fireEvent.click(screen.getByRole("menuitemradio", { name: /Fast/i }));
+    fireEvent.click(screen.getByRole("switch", { name: /Fast/i }));
 
     expect(onSelectServiceTier).toHaveBeenCalledWith("fast");
+  });
+
+  it("marks benchmark-informed model and effort recommendations", () => {
+    render(
+      <ComposerHarness
+        onSend={() => {}}
+        models={[
+          modelOption("gpt-5.6-luna", "GPT-5.6 Luna", ["low", "high"]),
+          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["high", "xhigh"]),
+          modelOption("gpt-5.6-terra", "GPT-5.6 Terra", ["max", "ultra"]),
+        ]}
+        selectedModelId="gpt-5.6-sol"
+        reasoningOptions={["high", "xhigh"]}
+        selectedEffort="high"
+        reasoningSupported={true}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+
+    expect(screen.getByText("Recommended value")).toBeTruthy();
+    fireEvent.click(screen.getByRole("link", { name: /Why recommended?/i }));
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://x.com/rasbt/status/2075961865683825141",
+    );
+    expect(
+      screen.getByRole("radio", {
+        name: "GPT-5.6 Luna, Low reasoning, recommended value",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("radio", {
+        name: "GPT-5.6 Sol, Extra High reasoning, recommended value",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("radio", {
+        name: "GPT-5.6 Terra, Max reasoning, recommended value",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("radio", {
+        name: /GPT-5.6 Sol, High reasoning, recommended value/,
+      }),
+    ).toBeNull();
   });
 
   it("selects model and reasoning from a grid and keeps older models collapsed", () => {

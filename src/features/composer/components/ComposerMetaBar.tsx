@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Check, ChevronDown, SlidersHorizontal, Zap } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, Zap } from "lucide-react";
 import type {
   AccessMode,
   ModelOption,
@@ -108,9 +108,8 @@ export function ComposerMetaBar({
     onSelectEffort(effort);
     closeModelSettings();
   };
-  const selectServiceTier = (tier: ServiceTier | null) => {
-    onSelectServiceTier(tier);
-    closeModelSettings();
+  const toggleFastTier = () => {
+    onSelectServiceTier(selectedServiceTier === "fast" ? null : "fast");
   };
 
   return (
@@ -231,35 +230,13 @@ export function ComposerMetaBar({
                     <div className="composer-model-settings-heading">Speed</div>
                     <button
                       type="button"
-                      className={`composer-model-settings-item${
-                        selectedServiceTier !== "fast" ? " is-active" : ""
-                      }`}
-                      role="menuitemradio"
-                      aria-checked={selectedServiceTier !== "fast"}
-                      disabled={disabled}
-                      onClick={() => selectServiceTier(null)}
-                    >
-                      <span className="composer-model-settings-item-copy">
-                        <span className="composer-model-settings-item-title">
-                          Standard
-                        </span>
-                        <span className="composer-model-settings-item-description">
-                          Default speed
-                        </span>
-                      </span>
-                      {selectedServiceTier !== "fast" && (
-                        <Check size={15} strokeWidth={1.8} aria-hidden />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      className={`composer-model-settings-item${
+                      className={`composer-fast-switch-row${
                         selectedServiceTier === "fast" ? " is-active" : ""
                       }`}
-                      role="menuitemradio"
+                      role="switch"
                       aria-checked={selectedServiceTier === "fast"}
                       disabled={disabled || !supportsFastTier}
-                      onClick={() => selectServiceTier("fast")}
+                      onClick={toggleFastTier}
                     >
                       <span className="composer-model-settings-item-copy">
                         <span className="composer-model-settings-item-title composer-model-settings-speed-title">
@@ -270,9 +247,9 @@ export function ComposerMetaBar({
                           1.5x speed, increased usage
                         </span>
                       </span>
-                      {selectedServiceTier === "fast" && (
-                        <Check size={15} strokeWidth={1.8} aria-hidden />
-                      )}
+                      <span className="composer-fast-switch" aria-hidden>
+                        <span className="composer-fast-switch-thumb" />
+                      </span>
                     </button>
                   </div>
                 </>

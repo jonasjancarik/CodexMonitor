@@ -1,11 +1,22 @@
-import { Check, ChevronDown, Circle, Minus } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  Check,
+  ChevronDown,
+  Circle,
+  ExternalLink,
+  Minus,
+  Sparkles,
+} from "lucide-react";
 import { useId, useState, type CSSProperties } from "react";
 
+import { isRecommendedModelEffort } from "@/features/models/utils/modelRecommendations";
 import { formatReasoningEffortLabel } from "@/features/models/utils/reasoningEffort";
 import type { ModelOption } from "@/types";
 
 const DEFAULT_EFFORT_ID = "__default__";
 const EFFORT_ORDER = ["low", "medium", "high", "xhigh", "max", "ultra"];
+const RECOMMENDATION_SOURCE_URL =
+  "https://x.com/rasbt/status/2075961865683825141";
 
 type ComposerModelGridProps = {
   disabled: boolean;
@@ -94,6 +105,11 @@ export function ComposerModelGrid({
   const currentModels = models.filter((model) => !isOlderThanGpt56(model));
   const olderModels = models.filter(isOlderThanGpt56);
   const efforts = collectEfforts(models, selectedModelId, selectedModelEfforts);
+  const hasRecommendations = models.some((model) =>
+    modelEfforts(model, selectedModelId, selectedModelEfforts).some((effort) =>
+      isRecommendedModelEffort(model, effort),
+    ),
+  );
   const gridStyle = {
     "--composer-model-columns": efforts.length,
   } as CSSProperties;
@@ -168,6 +184,32 @@ export function ComposerModelGrid({
               selectedModelId={selectedModelId}
             />
           )}
+        </div>
+      )}
+
+      {hasRecommendations && (
+        <div
+          className="composer-model-grid-recommendation-legend"
+          title="Recommended for cost and performance based on independent coding benchmarks"
+        >
+          <Sparkles size={11} strokeWidth={1.8} aria-hidden />
+          <span>Recommended value</span>
+          <span className="composer-model-grid-recommendation-separator" aria-hidden>
+            ·
+          </span>
+          <a
+            className="composer-model-grid-recommendation-link"
+            href={RECOMMENDATION_SOURCE_URL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => {
+              event.preventDefault();
+              void openUrl(RECOMMENDATION_SOURCE_URL);
+            }}
+          >
+            Why recommended?
+            <ExternalLink size={9} strokeWidth={1.8} aria-hidden />
+          </a>
         </div>
       )}
     </div>
@@ -270,6 +312,8 @@ function ModelRow({
           (effort === DEFAULT_EFFORT_ID
             ? selectedEffort === null
             : effort === selectedEffort);
+        const recommended =
+          supported && isRecommendedModelEffort(model, effort);
         const effortLabel =
           effort === DEFAULT_EFFORT_ID
             ? "Default"
@@ -284,7 +328,9 @@ function ModelRow({
               type="radio"
               name={radioGroupName}
               value={`${model.id}:${effort}`}
-              aria-label={`${fullModelLabel}, ${effortLabel} reasoning`}
+              aria-label={`${fullModelLabel}, ${effortLabel} reasoning${
+                recommended ? ", recommended value" : ""
+              }`}
               checked={selected}
               disabled={disabled || !supported}
               onChange={() =>
@@ -297,14 +343,19 @@ function ModelRow({
             <label
               className={`composer-model-grid-cell-label${
                 selected ? " is-active" : ""
-              }${!supported ? " is-disabled" : ""}`}
+              }${recommended ? " is-recommended" : ""}${
+                !supported ? " is-disabled" : ""
+              }`}
               htmlFor={inputId}
               aria-hidden
+              title={recommended ? "Recommended value" : undefined}
             >
               {!supported ? (
                 <Minus size={12} strokeWidth={1.8} />
               ) : selected ? (
                 <Check size={14} strokeWidth={2} />
+              ) : recommended ? (
+                <Sparkles size={11} strokeWidth={1.9} />
               ) : (
                 <Circle size={7} strokeWidth={2.2} fill="currentColor" />
               )}
