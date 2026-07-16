@@ -58,26 +58,11 @@ pub(crate) struct InitGitRepoRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct InitGitRepoRequiredRequest {
-    pub(crate) workspace_id: String,
-    pub(crate) branch: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub(crate) struct CreateGitHubRepoRequest {
     pub(crate) workspace_id: String,
     pub(crate) repo: String,
     pub(crate) visibility: String,
     pub(crate) branch: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct CreateGitHubRepoRequiredRequest {
-    pub(crate) workspace_id: String,
-    pub(crate) repo: String,
-    pub(crate) visibility: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

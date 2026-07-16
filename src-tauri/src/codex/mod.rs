@@ -15,6 +15,7 @@ use crate::event_sink::TauriEventSink;
 use crate::remote_backend;
 use crate::shared::agents_config_core;
 use crate::shared::codex_core::{self, insert_optional_nullable_string};
+use crate::shared::git_rpc;
 use crate::state::AppState;
 use crate::types::WorkspaceEntry;
 
@@ -895,14 +896,15 @@ pub(crate) async fn generate_commit_message(
     app: AppHandle,
 ) -> Result<String, String> {
     if remote_backend::is_remote_mode(&*state).await {
+        let request = git_rpc::GenerateCommitMessageRequest {
+            workspace_id,
+            commit_message_model_id,
+        };
         let value = remote_backend::call_remote(
             &*state,
             app,
-            "generate_commit_message",
-            json!({
-                "workspaceId": workspace_id,
-                "commitMessageModelId": commit_message_model_id,
-            }),
+            git_rpc::METHOD_GENERATE_COMMIT_MESSAGE,
+            git_rpc::to_params(&request)?,
         )
         .await?;
         return serde_json::from_value(value).map_err(|err| err.to_string());

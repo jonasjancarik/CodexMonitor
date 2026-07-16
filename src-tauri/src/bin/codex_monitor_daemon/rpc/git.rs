@@ -48,31 +48,33 @@ pub(super) async fn try_handle(
             Some(state.get_git_status(request.workspace_id).await)
         }
         git_rpc::METHOD_INIT_GIT_REPO => {
-            let request = parse_request_or_err!(params, git_rpc::InitGitRepoRequiredRequest);
-            let force = parse_optional_bool(params, "force").unwrap_or(false);
+            let request = parse_request_or_err!(params, git_rpc::InitGitRepoRequest);
             Some(
                 state
-                    .init_git_repo(request.workspace_id, request.branch, force)
+                    .init_git_repo(
+                        request.workspace_id,
+                        request.branch,
+                        request.force.unwrap_or(false),
+                    )
                     .await,
             )
         }
         git_rpc::METHOD_CREATE_GITHUB_REPO => {
-            let request = parse_request_or_err!(params, git_rpc::CreateGitHubRepoRequiredRequest);
-            let branch = parse_optional_string(params, "branch");
+            let request = parse_request_or_err!(params, git_rpc::CreateGitHubRepoRequest);
             Some(
                 state
                     .create_github_repo(
                         request.workspace_id,
                         request.repo,
                         request.visibility,
-                        branch,
+                        request.branch,
                     )
                     .await,
             )
         }
         git_rpc::METHOD_LIST_GIT_ROOTS => {
-            let request = parse_request_or_err!(params, git_rpc::WorkspaceIdRequest);
-            let depth = parse_optional_u32(params, "depth").map(|value| value as usize);
+            let request = parse_request_or_err!(params, git_rpc::ListGitRootsRequest);
+            let depth = request.depth.map(|value| value as usize);
             Some(serialize_result(state.list_git_roots(request.workspace_id, depth)).await)
         }
         git_rpc::METHOD_GET_GIT_DIFFS => {
@@ -80,8 +82,8 @@ pub(super) async fn try_handle(
             Some(serialize_result(state.get_git_diffs(request.workspace_id)).await)
         }
         git_rpc::METHOD_GET_GIT_LOG => {
-            let request = parse_request_or_err!(params, git_rpc::WorkspaceIdRequest);
-            let limit = parse_optional_u32(params, "limit").map(|value| value as usize);
+            let request = parse_request_or_err!(params, git_rpc::GetGitLogRequest);
+            let limit = request.limit.map(|value| value as usize);
             Some(serialize_result(state.get_git_log(request.workspace_id, limit)).await)
         }
         git_rpc::METHOD_GET_GIT_COMMIT_DIFF => {
@@ -227,11 +229,10 @@ pub(super) async fn try_handle(
             Some(serialize_ok(state.create_git_branch(request.workspace_id, request.name)).await)
         }
         git_rpc::METHOD_GENERATE_COMMIT_MESSAGE => {
-            let request = parse_request_or_err!(params, git_rpc::WorkspaceIdRequest);
-            let commit_message_model_id = parse_optional_string(params, "commitMessageModelId");
+            let request = parse_request_or_err!(params, git_rpc::GenerateCommitMessageRequest);
             Some(
                 state
-                    .generate_commit_message(request.workspace_id, commit_message_model_id)
+                    .generate_commit_message(request.workspace_id, request.commit_message_model_id)
                     .await
                     .map(Value::String),
             )
