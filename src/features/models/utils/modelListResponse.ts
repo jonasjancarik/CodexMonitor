@@ -74,8 +74,8 @@ function parseReasoningEfforts(item: Record<string, unknown>): ModelOption["supp
 
 function parseServiceTiers(item: Record<string, unknown>): ModelOption["serviceTiers"] {
   const tiers = item.serviceTiers ?? item.service_tiers;
-  if (Array.isArray(tiers)) {
-    return tiers
+  const parsedTiers = Array.isArray(tiers)
+    ? tiers
       .map((tier) => {
         if (!tier || typeof tier !== "object") {
           return null;
@@ -94,22 +94,31 @@ function parseServiceTiers(item: Record<string, unknown>): ModelOption["serviceT
       })
       .filter((tier): tier is { id: string; name: string; description: string } =>
         tier !== null,
-      );
-  }
+      )
+    : [];
 
   const speedTiers = item.additionalSpeedTiers ?? item.additional_speed_tiers;
-  if (Array.isArray(speedTiers)) {
-    return speedTiers
+  const parsedSpeedTiers = Array.isArray(speedTiers)
+    ? speedTiers
       .map((tier) => String(tier ?? "").trim())
       .filter((id) => id.length > 0)
       .map((id) => ({
         id,
         name: id,
         description: "",
-      }));
-  }
+      }))
+    : [];
 
-  return [];
+  return Array.from(
+    [...parsedTiers, ...parsedSpeedTiers]
+      .reduce((byId, tier) => {
+        if (!byId.has(tier.id)) {
+          byId.set(tier.id, tier);
+        }
+        return byId;
+      }, new Map<string, { id: string; name: string; description: string }>())
+      .values(),
+  );
 }
 
 export function parseModelListResponse(response: unknown): ModelOption[] {
