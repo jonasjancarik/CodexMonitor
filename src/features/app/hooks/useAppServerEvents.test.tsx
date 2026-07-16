@@ -489,6 +489,88 @@ describe("useAppServerEvents", () => {
     });
   });
 
+  it("routes automatic approval reviews through item lifecycle handlers", async () => {
+    const handlers: Handlers = {
+      onItemStarted: vi.fn(),
+      onItemCompleted: vi.fn(),
+    };
+    const { root } = await mount(handlers);
+    const action = {
+      type: "command",
+      source: "unifiedExec",
+      command: "npm test",
+      cwd: "/workspace",
+    };
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "item/autoApprovalReview/started",
+          params: {
+            threadId: "thread-1",
+            turnId: "turn-1",
+            reviewId: "review-1",
+            targetItemId: "command-1",
+            review: { status: "inProgress" },
+            action,
+          },
+        },
+      });
+    });
+    expect(handlers.onItemStarted).toHaveBeenCalledWith("ws-1", "thread-1", {
+      type: "autoApprovalReview",
+      id: "review-1",
+      turnId: "turn-1",
+      targetItemId: "command-1",
+      decisionSource: null,
+      status: "inProgress",
+      riskLevel: null,
+      userAuthorization: null,
+      rationale: null,
+      action,
+    });
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "item/autoApprovalReview/completed",
+          params: {
+            threadId: "thread-1",
+            turnId: "turn-1",
+            reviewId: "review-1",
+            targetItemId: "command-1",
+            decisionSource: "agent",
+            review: {
+              status: "approved",
+              riskLevel: "low",
+              userAuthorization: "high",
+              rationale: "The user requested this command.",
+            },
+            action,
+          },
+        },
+      });
+    });
+    expect(handlers.onItemCompleted).toHaveBeenCalledWith("ws-1", "thread-1", {
+      type: "autoApprovalReview",
+      id: "review-1",
+      turnId: "turn-1",
+      targetItemId: "command-1",
+      decisionSource: "agent",
+      status: "approved",
+      riskLevel: "low",
+      userAuthorization: "high",
+      rationale: "The user requested this command.",
+      action,
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("ignores delta events missing required fields", async () => {
     const handlers: Handlers = {
       onAgentMessageDelta: vi.fn(),

@@ -6,6 +6,7 @@ import type {
 } from "../../../types";
 import { subscribeAppServerEvents } from "../../../services/events";
 import {
+  buildAutoApprovalReviewItem,
   getAppServerParams,
   getAppServerRawMethod,
   getAppServerRequestId,
@@ -118,6 +119,8 @@ export const METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS = [
   "hook/completed",
   "hook/started",
   "item/agentMessage/delta",
+  "item/autoApprovalReview/completed",
+  "item/autoApprovalReview/started",
   "item/commandExecution/outputDelta",
   "item/commandExecution/terminalInteraction",
   "item/completed",
@@ -211,6 +214,23 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (!isSupportedAppServerMethod(method)) {
+        return;
+      }
+
+      if (
+        method === "item/autoApprovalReview/started" ||
+        method === "item/autoApprovalReview/completed"
+      ) {
+        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const phase = method.endsWith("/started") ? "started" : "completed";
+        const item = buildAutoApprovalReviewItem(params, phase);
+        if (threadId && item) {
+          if (phase === "started") {
+            currentHandlers.onItemStarted?.(workspace_id, threadId, item);
+          } else {
+            currentHandlers.onItemCompleted?.(workspace_id, threadId, item);
+          }
+        }
         return;
       }
 

@@ -1667,6 +1667,40 @@ describe("Messages", () => {
     expect(screen.queryByText("Plan ready")).toBeNull();
   });
 
+  it("renders automatic approval review decisions", () => {
+    const items: ConversationItem[] = [
+      {
+        id: "approval-review-1",
+        kind: "tool",
+        toolType: "autoApprovalReview",
+        title: "npm test",
+        detail: "Working directory: /workspace",
+        status: "approved",
+        output: "**Risk:** low\n\n**Reason:** The command matches the request.",
+      },
+    ];
+
+    render(
+      <Messages
+        items={items}
+        threadId="thread-1"
+        workspaceId="ws-1"
+        isThinking={false}
+        openTargets={[]}
+        selectedOpenAppId=""
+      />,
+    );
+
+    expect(screen.getByText("approval:")).toBeTruthy();
+    expect(screen.getByText("npm test")).toBeTruthy();
+    expect(screen.getByText("approved")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle tool details" }));
+    expect(screen.getByText("Working directory: /workspace")).toBeTruthy();
+    expect(screen.getByText("Risk:")).toBeTruthy();
+    expect(screen.getByText("The command matches the request.")).toBeTruthy();
+  });
+
   it("renders hook rows through the standard tool renderer", () => {
     const items: ConversationItem[] = [
       {

@@ -43,7 +43,12 @@ const DEFAULT_ENTRY: ThreadCodexParams = {
 };
 
 function coerceAccessMode(value: unknown): AccessMode | null {
-  if (value === "read-only" || value === "current" || value === "full-access") {
+  if (
+    value === "read-only" ||
+    value === "current" ||
+    value === "auto-review" ||
+    value === "full-access"
+  ) {
     return value;
   }
   return null;

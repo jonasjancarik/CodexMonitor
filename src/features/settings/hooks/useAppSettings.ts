@@ -143,7 +143,7 @@ function buildDefaultSettings(): AppSettings {
     remoteBackends: [defaultRemote],
     activeRemoteBackendId: defaultRemote.id,
     keepDaemonRunningAfterAppClose: false,
-    defaultAccessMode: "current",
+    defaultAccessMode: "auto-review",
     reviewDeliveryMode: "inline",
     composerModelShortcut: isMac ? "cmd+shift+m" : "ctrl+shift+m",
     composerAccessShortcut: isMac ? "cmd+shift+a" : "ctrl+shift+a",

@@ -24,7 +24,12 @@ type UseComposerShortcutsOptions = {
   reasoningSupported: boolean;
 };
 
-const ACCESS_ORDER: AccessMode[] = ["read-only", "current", "full-access"];
+const ACCESS_ORDER: AccessMode[] = [
+  "read-only",
+  "current",
+  "auto-review",
+  "full-access",
+];
 
 export function useComposerShortcuts({
   textareaRef,

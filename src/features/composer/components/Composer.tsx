@@ -76,8 +76,10 @@ type ComposerProps = {
   codexArgsOptions?: CodexArgsOption[];
   selectedCodexArgsOverride?: string | null;
   onSelectCodexArgsOverride?: (value: string | null) => void;
-  accessMode: "read-only" | "current" | "full-access";
-  onSelectAccessMode: (mode: "read-only" | "current" | "full-access") => void;
+  accessMode: "read-only" | "current" | "auto-review" | "full-access";
+  onSelectAccessMode: (
+    mode: "read-only" | "current" | "auto-review" | "full-access",
+  ) => void;
   skills: { name: string; description?: string }[];
   apps: AppOption[];
   prompts: CustomPromptOption[];

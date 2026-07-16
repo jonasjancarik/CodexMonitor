@@ -481,7 +481,7 @@ export function SettingsCodexSection({
             Access mode
           </label>
         }
-        subtitle="Used when there is no thread-specific override."
+        subtitle="Used when there is no thread-specific override. Auto-review lets Codex review approval requests before they reach you."
       >
         <select
           id="default-access"
@@ -496,6 +496,7 @@ export function SettingsCodexSection({
         >
           <option value="read-only">Read only</option>
           <option value="current">On-request</option>
+          <option value="auto-review">Auto-review</option>
           <option value="full-access">Full access</option>
         </select>
       </SettingsToggleRow>

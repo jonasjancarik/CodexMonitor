@@ -193,7 +193,7 @@ export type PullRequestSelectionRange = {
   lines: PullRequestSelectionLine[];
 };
 
-export type AccessMode = "read-only" | "current" | "full-access";
+export type AccessMode = "read-only" | "current" | "auto-review" | "full-access";
 export type ServiceTier = "fast" | "flex";
 export type BackendMode = "local" | "remote";
 export type RemoteBackendProvider = "tcp";

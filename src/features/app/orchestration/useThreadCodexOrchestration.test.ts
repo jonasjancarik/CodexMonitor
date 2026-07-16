@@ -11,6 +11,15 @@ describe("useThreadCodexOrchestration", () => {
     localStorage.clear();
   });
 
+  it("starts with auto-review access before persisted settings are applied", () => {
+    const { result } = renderHook(() => {
+      const activeWorkspaceIdForParamsRef = useRef<string | null>("ws-1");
+      return useThreadCodexOrchestration({ activeWorkspaceIdForParamsRef });
+    });
+
+    expect(result.current.accessMode).toBe("auto-review");
+  });
+
   it("mirrors active-thread fast mode changes into the workspace no-thread scope", () => {
     const { result } = renderHook(() => {
       const activeWorkspaceIdForParamsRef = useRef<string | null>("ws-1");

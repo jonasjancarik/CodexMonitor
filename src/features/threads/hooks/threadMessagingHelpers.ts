@@ -234,7 +234,7 @@ export function buildStatusLines({
     `- Model: ${model ?? "default"}`,
     `- Fast mode: ${serviceTier === "fast" ? "on" : "off"}`,
     `- Reasoning effort: ${effort ?? "default"}`,
-    `- Access: ${accessMode ?? "current"}`,
+    `- Access: ${accessMode ?? "auto-review"}`,
     `- Collaboration: ${getCollaborationModeId(collaborationMode) || "off"}`,
   ];
 

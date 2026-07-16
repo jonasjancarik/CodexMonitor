@@ -374,6 +374,15 @@ export function buildToolSummary(
     };
   }
 
+  if (item.toolType === "autoApprovalReview") {
+    return {
+      label: "approval",
+      value: item.title || "requested action",
+      detail: item.detail || "",
+      output: item.output || "",
+    };
+  }
+
   if (item.toolType === "collabToolCall") {
     return {
       label: summarizeCollabLabel(item.title, item.status),
@@ -431,13 +440,13 @@ export function statusToneFromText(status?: string): StatusTone {
     return "unknown";
   }
   const normalized = status.toLowerCase();
-  if (/(fail|error)/.test(normalized)) {
+  if (/(fail|error|denied|stopped|timed[ _-]?out)/.test(normalized)) {
     return "failed";
   }
   if (/(pending|running|processing|started|in[_\s-]?progress)/.test(normalized)) {
     return "processing";
   }
-  if (/(complete|completed|success|done)/.test(normalized)) {
+  if (/(complete|completed|success|done|approved)/.test(normalized)) {
     return "completed";
   }
   return "unknown";
@@ -460,7 +469,7 @@ export function toolStatusTone(
 export function formatToolStatusLabel(
   item: Extract<ConversationItem, { kind: "tool" }>,
 ) {
-  if (item.toolType !== "hook") {
+  if (item.toolType !== "hook" && item.toolType !== "autoApprovalReview") {
     return "";
   }
   const parts: string[] = [];

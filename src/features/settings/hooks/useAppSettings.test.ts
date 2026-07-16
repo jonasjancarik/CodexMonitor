@@ -36,6 +36,7 @@ describe("useAppSettings", () => {
         theme: "nope" as unknown as AppSettings["theme"],
         backendMode: "remote",
         remoteBackendHost: "example:1234",
+        defaultAccessMode: "current",
         personality: "unknown",
         uiFontFamily: "",
         codeFontFamily: "  ",
@@ -55,6 +56,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.personality).toBe("friendly");
     expect(result.current.settings.backendMode).toBe("remote");
     expect(result.current.settings.remoteBackendHost).toBe("example:1234");
+    expect(result.current.settings.defaultAccessMode).toBe("current");
   });
 
   it("keeps defaults when getAppSettings fails", async () => {
@@ -69,6 +71,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
     expect(result.current.settings.codeFontFamily).toContain("ui-monospace");
     expect(result.current.settings.backendMode).toBe("local");
+    expect(result.current.settings.defaultAccessMode).toBe("auto-review");
     expect(result.current.settings.dictationModelId).toBe("base");
     expect(result.current.settings.interruptShortcut).toBeTruthy();
   });

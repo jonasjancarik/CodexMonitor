@@ -331,6 +331,7 @@ export function ComposerMetaBar({
           >
             <option value="read-only">Read only</option>
             <option value="current">On-Request</option>
+            <option value="auto-review">Auto-review</option>
             <option value="full-access">Full access</option>
           </select>
         </div>

@@ -12,6 +12,8 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "hook/completed",
   "hook/started",
   "item/agentMessage/delta",
+  "item/autoApprovalReview/completed",
+  "item/autoApprovalReview/started",
   "item/commandExecution/outputDelta",
   "item/commandExecution/terminalInteraction",
   "item/completed",
@@ -99,6 +101,41 @@ export function getAppServerRequestId(event: AppServerEvent): string | number | 
     return requestId;
   }
   return null;
+}
+
+export function buildAutoApprovalReviewItem(
+  params: Record<string, unknown>,
+  phase: "started" | "completed",
+): Record<string, unknown> | null {
+  const reviewId = String(params.reviewId ?? params.review_id ?? "").trim();
+  const reviewRaw = params.review;
+  const actionRaw = params.action;
+  if (
+    !reviewId ||
+    !reviewRaw ||
+    typeof reviewRaw !== "object" ||
+    Array.isArray(reviewRaw) ||
+    !actionRaw ||
+    typeof actionRaw !== "object" ||
+    Array.isArray(actionRaw)
+  ) {
+    return null;
+  }
+
+  const review = reviewRaw as Record<string, unknown>;
+  return {
+    type: "autoApprovalReview",
+    id: reviewId,
+    turnId: params.turnId ?? params.turn_id ?? null,
+    targetItemId: params.targetItemId ?? params.target_item_id ?? null,
+    decisionSource: params.decisionSource ?? params.decision_source ?? null,
+    status: review.status ?? (phase === "started" ? "inProgress" : "completed"),
+    riskLevel: review.riskLevel ?? review.risk_level ?? null,
+    userAuthorization:
+      review.userAuthorization ?? review.user_authorization ?? null,
+    rationale: review.rationale ?? null,
+    action: actionRaw,
+  };
 }
 
 export function isApprovalRequestMethod(method: string): boolean {

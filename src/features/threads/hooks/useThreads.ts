@@ -52,7 +52,7 @@ type UseThreadsOptions = {
   effort?: string | null;
   serviceTier?: ServiceTier | null | undefined;
   collaborationMode?: Record<string, unknown> | null;
-  accessMode?: "read-only" | "current" | "full-access";
+  accessMode?: "read-only" | "current" | "auto-review" | "full-access";
   onSelectServiceTier?: (tier: ServiceTier | null | undefined) => void;
   reviewDeliveryMode?: "inline" | "detached";
   steerEnabled?: boolean;

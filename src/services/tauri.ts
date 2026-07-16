@@ -459,7 +459,7 @@ export async function sendUserMessage(
     model?: string | null;
     effort?: string | null;
     serviceTier?: "fast" | "flex" | null | undefined;
-    accessMode?: "read-only" | "current" | "full-access";
+    accessMode?: "read-only" | "current" | "auto-review" | "full-access";
     images?: string[];
     collaborationMode?: Record<string, unknown> | null;
     appMentions?: AppMention[];

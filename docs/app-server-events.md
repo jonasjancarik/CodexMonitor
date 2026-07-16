@@ -1,4 +1,4 @@
-# App-Server Events Reference (Codex `365d70203da18c2a6f6848df3778e390e794ef17`)
+# App-Server Events Reference (Codex `03bb3b12367397e14a8facc2e018d645ff4d8e83`)
 
 This document helps agents quickly answer:
 - Which app-server events CodexMonitor supports right now.
@@ -65,6 +65,8 @@ subscriptions.
 - `hook/completed`
 - `hook/started`
 - `item/agentMessage/delta`
+- `item/autoApprovalReview/completed`
+- `item/autoApprovalReview/started`
 - `item/commandExecution/outputDelta`
 - `item/commandExecution/terminalInteraction`
 - `item/completed`
@@ -117,6 +119,25 @@ CodexMonitor status:
 - It renders/stores `contextCompaction` items via the normal item lifecycle.
 - It no longer routes deprecated `thread/compacted`.
 
+## Approval Auto-Review Signals (Codex v2)
+
+CodexMonitor supports approval auto-review end to end:
+
+- **Auto-review** is the default access mode for new settings. Selecting it sends
+  `approvalsReviewer: "auto_review"` with `turn/start` while retaining the
+  workspace sandbox and `on-request` approval policy.
+- Existing access modes do not override `approvals_reviewer` from Codex
+  configuration.
+- `item/autoApprovalReview/started` and
+  `item/autoApprovalReview/completed` are normalized into one updatable
+  conversation item keyed by `reviewId`.
+- The item shows the reviewed action, progress or decision, risk level, user
+  authorization level, and rationale when Codex provides them.
+
+The upstream notification payloads are explicitly unstable. Keep their
+normalization at the `appServerEvents.ts` boundary so future schema changes do
+not leak into reducers or components.
+
 ## Missing Events (Codex v2 Notifications)
 
 Compared against Codex app-server protocol v2 notifications, the following
@@ -131,8 +152,6 @@ events are currently not routed:
 - `fuzzyFileSearch/sessionCompleted`
 - `fuzzyFileSearch/sessionUpdated`
 - `guardianWarning`
-- `item/autoApprovalReview/completed`
-- `item/autoApprovalReview/started`
 - `item/fileChange/patchUpdated`
 - `item/mcpToolCall/progress`
 - `mcpServer/oauthLogin/completed`
@@ -196,6 +215,9 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 
 Notes:
 - `turn/start` forwards the optional `serviceTier` override (`"fast"` from the speed picker or `/fast`, `null` for standard speed) alongside `model`, `effort`, and `collaborationMode`.
+- `turn/start` forwards `approvalsReviewer: "auto_review"` when the selected
+  access mode is **Auto-review**. Other access modes leave the reviewer unset
+  so Codex configuration remains authoritative.
 
 ## Missing Client Requests (Codex v2 ClientRequest Methods)
 

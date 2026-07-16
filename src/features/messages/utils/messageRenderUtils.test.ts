@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { ConversationItem } from "../../../types";
-import { buildToolSummary, statusToneFromText } from "./messageRenderUtils";
+import {
+  buildToolSummary,
+  formatToolStatusLabel,
+  statusToneFromText,
+} from "./messageRenderUtils";
 
 function makeToolItem(
   overrides: Partial<Extract<ConversationItem, { kind: "tool" }>>,
@@ -40,6 +44,27 @@ describe("messageRenderUtils", () => {
 
   it("classifies camelCase inProgress as processing", () => {
     expect(statusToneFromText("inProgress")).toBe("processing");
+  });
+
+  it("renders automatic approval review decisions", () => {
+    const item = makeToolItem({
+      toolType: "autoApprovalReview",
+      title: "npm test",
+      detail: "Working directory: /workspace",
+      status: "approved",
+      output: "**Risk:** low",
+    });
+    const summary = buildToolSummary(item, "");
+
+    expect(summary).toEqual({
+      label: "approval",
+      value: "npm test",
+      detail: "Working directory: /workspace",
+      output: "**Risk:** low",
+    });
+    expect(formatToolStatusLabel(item)).toBe("approved");
+    expect(statusToneFromText("approved")).toBe("completed");
+    expect(statusToneFromText("denied")).toBe("failed");
   });
 
   it("renders collab tool calls with nickname and role", () => {

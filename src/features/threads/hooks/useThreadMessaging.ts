@@ -45,7 +45,7 @@ import {
 type UseThreadMessagingOptions = {
   activeWorkspace: WorkspaceInfo | null;
   activeThreadId: string | null;
-  accessMode?: "read-only" | "current" | "full-access";
+  accessMode?: "read-only" | "current" | "auto-review" | "full-access";
   model?: string | null;
   effort?: string | null;
   serviceTier?: ServiceTier | null | undefined;

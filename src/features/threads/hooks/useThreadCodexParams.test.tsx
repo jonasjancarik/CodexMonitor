@@ -40,6 +40,20 @@ describe("useThreadCodexParams", () => {
     expect(persisted["ws-1:thread-1"]).toBeTruthy();
   });
 
+  it("persists automatic approval review as a thread access mode", () => {
+    const { result } = renderHook(() => useThreadCodexParams());
+
+    act(() => {
+      result.current.patchThreadCodexParams("ws-1", "thread-1", {
+        accessMode: "auto-review",
+      });
+    });
+
+    expect(
+      result.current.getThreadCodexParams("ws-1", "thread-1")?.accessMode,
+    ).toBe("auto-review");
+  });
+
   it("sanitizes malformed persisted entries", () => {
     window.localStorage.setItem(
       STORAGE_KEY_THREAD_CODEX_PARAMS,

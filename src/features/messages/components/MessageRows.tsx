@@ -10,6 +10,7 @@ import FileText from "lucide-react/dist/esm/icons/file-text";
 import Image from "lucide-react/dist/esm/icons/image";
 import Quote from "lucide-react/dist/esm/icons/quote";
 import Search from "lucide-react/dist/esm/icons/search";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
 import Terminal from "lucide-react/dist/esm/icons/terminal";
 import Users from "lucide-react/dist/esm/icons/users";
 import Wrench from "lucide-react/dist/esm/icons/wrench";
@@ -266,6 +267,9 @@ function toolIconForSummary(
   }
   if (item.toolType === "collabToolCall") {
     return Users;
+  }
+  if (item.toolType === "autoApprovalReview") {
+    return ShieldCheck;
   }
 
   const label = summary.label.toLowerCase();
@@ -872,7 +876,9 @@ export const ToolRow = memo(function ToolRow({
           <Markdown
             value={summary.output}
             className="tool-inline-output markdown"
-            codeBlock={item.toolType !== "plan"}
+            codeBlock={
+              item.toolType !== "plan" && item.toolType !== "autoApprovalReview"
+            }
             showFilePath={showMessageFilePath}
             workspacePath={workspacePath}
             onOpenFileLink={onOpenFileLink}

@@ -471,6 +471,28 @@ pub(crate) fn insert_optional_nullable_string(
     }
 }
 
+fn build_turn_permission_overrides(
+    access_mode: &str,
+    workspace_path: &str,
+) -> (Value, &'static str, Option<&'static str>) {
+    let sandbox_policy = match access_mode {
+        "full-access" => json!({ "type": "dangerFullAccess" }),
+        "read-only" => json!({ "type": "readOnly" }),
+        _ => json!({
+            "type": "workspaceWrite",
+            "writableRoots": [workspace_path],
+            "networkAccess": true
+        }),
+    };
+    let approval_policy = if access_mode == "full-access" {
+        "never"
+    } else {
+        "on-request"
+    };
+    let approvals_reviewer = (access_mode == "auto-review").then_some("auto_review");
+    (sandbox_policy, approval_policy, approvals_reviewer)
+}
+
 pub(crate) async fn send_user_message_core(
     sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
     workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
@@ -487,22 +509,9 @@ pub(crate) async fn send_user_message_core(
 ) -> Result<Value, String> {
     let session = get_session_clone(sessions, &workspace_id).await?;
     let workspace_path = resolve_workspace_path_core(workspaces, &workspace_id).await?;
-    let access_mode = access_mode.unwrap_or_else(|| "current".to_string());
-    let sandbox_policy = match access_mode.as_str() {
-        "full-access" => json!({ "type": "dangerFullAccess" }),
-        "read-only" => json!({ "type": "readOnly" }),
-        _ => json!({
-            "type": "workspaceWrite",
-            "writableRoots": [workspace_path.clone()],
-            "networkAccess": true
-        }),
-    };
-
-    let approval_policy = if access_mode == "full-access" {
-        "never"
-    } else {
-        "on-request"
-    };
+    let access_mode = access_mode.unwrap_or_else(|| "auto-review".to_string());
+    let (sandbox_policy, approval_policy, approvals_reviewer) =
+        build_turn_permission_overrides(&access_mode, &workspace_path);
 
     let input = build_turn_input_items(text, images, app_mentions)?;
 
@@ -512,6 +521,9 @@ pub(crate) async fn send_user_message_core(
     params.insert("cwd".to_string(), json!(workspace_path));
     params.insert("approvalPolicy".to_string(), json!(approval_policy));
     params.insert("sandboxPolicy".to_string(), json!(sandbox_policy));
+    if let Some(approvals_reviewer) = approvals_reviewer {
+        params.insert("approvalsReviewer".to_string(), json!(approvals_reviewer));
+    }
     params.insert("model".to_string(), json!(model));
     params.insert("effort".to_string(), json!(effort));
     insert_optional_nullable_string(&mut params, "serviceTier", service_tier);
@@ -1021,6 +1033,35 @@ mod tests {
 
         insert_optional_nullable_string(&mut params, "serviceTier", Some(Some("fast".to_string())));
         assert_eq!(params.get("serviceTier"), Some(&json!("fast")));
+    }
+
+    #[test]
+    fn auto_review_access_mode_sets_the_automatic_reviewer() {
+        let (sandbox, approval_policy, reviewer) =
+            build_turn_permission_overrides("auto-review", "/workspace");
+
+        assert_eq!(
+            sandbox,
+            json!({
+                "type": "workspaceWrite",
+                "writableRoots": ["/workspace"],
+                "networkAccess": true
+            })
+        );
+        assert_eq!(approval_policy, "on-request");
+        assert_eq!(reviewer, Some("auto_review"));
+    }
+
+    #[test]
+    fn existing_access_modes_do_not_override_the_configured_reviewer() {
+        let (_, _, current_reviewer) = build_turn_permission_overrides("current", "/workspace");
+        let (_, _, read_only_reviewer) = build_turn_permission_overrides("read-only", "/workspace");
+        let (_, _, full_access_reviewer) =
+            build_turn_permission_overrides("full-access", "/workspace");
+
+        assert_eq!(current_reviewer, None);
+        assert_eq!(read_only_reviewer, None);
+        assert_eq!(full_access_reviewer, None);
     }
 
     #[test]

@@ -900,6 +900,33 @@ describe("threadItems", () => {
     }
   });
 
+  it("builds automatic approval review items", () => {
+    const item = buildConversationItem({
+      type: "autoApprovalReview",
+      id: "approval-review-1",
+      status: "approved",
+      riskLevel: "low",
+      userAuthorization: "high",
+      rationale: "The command matches the user's request.",
+      action: {
+        type: "command",
+        command: "npm test",
+        cwd: "/workspace",
+      },
+    });
+
+    expect(item).toEqual({
+      id: "approval-review-1",
+      kind: "tool",
+      toolType: "autoApprovalReview",
+      title: "npm test",
+      detail: "Working directory: /workspace",
+      status: "approved",
+      output:
+        "**Risk:** low\n\n**User authorization:** high\n\n**Reason:** The command matches the user's request.",
+    });
+  });
+
   it("parses ISO timestamps for thread updates", () => {
     const timestamp = getThreadTimestamp({ updated_at: "2025-01-01T00:00:00Z" });
     expect(timestamp).toBe(Date.parse("2025-01-01T00:00:00Z"));

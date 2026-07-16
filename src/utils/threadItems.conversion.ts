@@ -41,6 +41,112 @@ function parseUserInputs(inputs: Array<Record<string, unknown>>) {
   return { text: textParts.join(" ").trim(), images };
 }
 
+function autoApprovalReviewStatus(value: unknown) {
+  const status = asString(value).trim();
+  if (status === "inProgress") {
+    return "reviewing";
+  }
+  if (status === "timedOut") {
+    return "timed out";
+  }
+  if (status === "aborted") {
+    return "stopped";
+  }
+  return status || "reviewing";
+}
+
+function autoApprovalReviewAction(value: unknown) {
+  const action =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const type = asString(action.type);
+  const cwd = asString(action.cwd).trim();
+
+  if (type === "command") {
+    return {
+      title: asString(action.command).trim() || "Command",
+      detail: cwd ? `Working directory: ${cwd}` : "",
+    };
+  }
+  if (type === "execve") {
+    const argv = Array.isArray(action.argv)
+      ? action.argv.flatMap((entry) => {
+          const value = asString(entry);
+          return value ? [value] : [];
+        })
+      : [];
+    const command = [asString(action.program).trim(), ...argv].filter(Boolean).join(" ");
+    return {
+      title: command || "Command",
+      detail: cwd ? `Working directory: ${cwd}` : "",
+    };
+  }
+  if (type === "applyPatch") {
+    const files = Array.isArray(action.files)
+      ? action.files.flatMap((entry) => {
+          const value = asString(entry);
+          return value ? [value] : [];
+        })
+      : [];
+    return {
+      title:
+        files.length === 1
+          ? `Changes to ${files[0]}`
+          : files.length > 1
+            ? `Changes to ${files.length} files`
+            : "File changes",
+      detail: [cwd ? `Working directory: ${cwd}` : "", ...files]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (type === "networkAccess") {
+    const target = asString(action.target).trim();
+    const host = asString(action.host).trim();
+    const port = asString(action.port).trim();
+    const destination = target || [host, port].filter(Boolean).join(":");
+    return {
+      title: destination ? `Network access to ${destination}` : "Network access",
+      detail: asString(action.protocol).trim(),
+    };
+  }
+  if (type === "mcpToolCall") {
+    const tool =
+      asString(action.toolTitle ?? action.tool_title).trim() ||
+      asString(action.toolName ?? action.tool_name).trim();
+    const provider =
+      asString(action.connectorName ?? action.connector_name).trim() ||
+      asString(action.server).trim();
+    return {
+      title: [provider, tool].filter(Boolean).join(" / ") || "Tool call",
+      detail: "",
+    };
+  }
+  if (type === "requestPermissions") {
+    return {
+      title: "Expanded permissions",
+      detail: asString(action.reason).trim(),
+    };
+  }
+  return { title: "Requested action", detail: "" };
+}
+
+function autoApprovalReviewOutput(item: Record<string, unknown>) {
+  const riskLevel = asString(item.riskLevel ?? item.risk_level).trim();
+  const userAuthorization = asString(
+    item.userAuthorization ?? item.user_authorization,
+  ).trim();
+  const rationale = asString(item.rationale).trim();
+  return [
+    riskLevel ? `**Risk:** ${riskLevel}` : "",
+    userAuthorization ? `**User authorization:** ${userAuthorization}` : "",
+    rationale ? `**Reason:** ${rationale}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 export function buildConversationItem(
   item: Record<string, unknown>,
 ): ConversationItem | null {
@@ -193,6 +299,18 @@ export function buildConversationItem(
       detail: "Compacting conversation context to fit token limits.",
       status: status || "completed",
       output: "",
+    };
+  }
+  if (type === "autoApprovalReview") {
+    const action = autoApprovalReviewAction(item.action);
+    return {
+      id,
+      kind: "tool",
+      toolType: type,
+      title: action.title,
+      detail: action.detail,
+      status: autoApprovalReviewStatus(item.status),
+      output: autoApprovalReviewOutput(item),
     };
   }
   if (type === "enteredReviewMode" || type === "exitedReviewMode") {

@@ -4,6 +4,7 @@ import type { AppServerEvent } from "../types";
 import {
   METHODS_HANDLED_OUTSIDE_USE_APP_SERVER_EVENTS,
   SUPPORTED_APP_SERVER_METHODS,
+  buildAutoApprovalReviewItem,
   getAppServerParams,
   getAppServerRawMethod,
   getAppServerRequestId,
@@ -43,6 +44,48 @@ describe("appServerEvents", () => {
     expect(isApprovalRequestMethod("workspace/request")).toBe(false);
     expect(isMcpElicitationRequestMethod("mcpServer/elicitation/request")).toBe(true);
     expect(isMcpElicitationRequestMethod("item/tool/requestUserInput")).toBe(false);
+  });
+
+  it("normalizes approval auto-review notifications into item lifecycle payloads", () => {
+    expect(
+      buildAutoApprovalReviewItem(
+        {
+          turn_id: "turn-1",
+          review_id: "review-1",
+          target_item_id: "command-1",
+          decision_source: "agent",
+          review: {
+            status: "approved",
+            risk_level: "low",
+            user_authorization: "high",
+            rationale: "The user requested this command.",
+          },
+          action: {
+            type: "command",
+            source: "unifiedExec",
+            command: "npm test",
+            cwd: "/workspace",
+          },
+        },
+        "completed",
+      ),
+    ).toEqual({
+      type: "autoApprovalReview",
+      id: "review-1",
+      turnId: "turn-1",
+      targetItemId: "command-1",
+      decisionSource: "agent",
+      status: "approved",
+      riskLevel: "low",
+      userAuthorization: "high",
+      rationale: "The user requested this command.",
+      action: {
+        type: "command",
+        source: "unifiedExec",
+        command: "npm test",
+        cwd: "/workspace",
+      },
+    });
   });
 
   it("matches canonical skills update event method only", () => {

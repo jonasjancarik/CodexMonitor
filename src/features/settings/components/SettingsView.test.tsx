@@ -1088,7 +1088,7 @@ describe("SettingsView Environments", () => {
 });
 
 describe("SettingsView Codex section", () => {
-  it("updates review mode in codex section", async () => {
+  it("updates automatic approval review and review delivery", async () => {
     cleanup();
     const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
     render(
@@ -1123,6 +1123,15 @@ describe("SettingsView Codex section", () => {
         initialSection="codex"
       />,
     );
+
+    fireEvent.change(screen.getByLabelText("Access mode"), {
+      target: { value: "auto-review" },
+    });
+    await waitFor(() => {
+      expect(onUpdateAppSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ defaultAccessMode: "auto-review" }),
+      );
+    });
 
     fireEvent.change(screen.getByLabelText("Review mode"), {
       target: { value: "detached" },
