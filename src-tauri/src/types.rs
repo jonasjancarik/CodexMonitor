@@ -523,6 +523,21 @@ pub(crate) struct AppSettings {
     pub(crate) last_composer_model_id: Option<String>,
     #[serde(default, rename = "lastComposerReasoningEffort")]
     pub(crate) last_composer_reasoning_effort: Option<String>,
+    #[serde(
+        default = "default_composer_model_picker_mode",
+        rename = "composerModelPickerMode"
+    )]
+    pub(crate) composer_model_picker_mode: String,
+    #[serde(
+        default = "default_true",
+        rename = "composerModelRecommendationHighlightsEnabled"
+    )]
+    pub(crate) composer_model_recommendation_highlights_enabled: bool,
+    #[serde(
+        default = "default_composer_simplified_model_presets",
+        rename = "composerSimplifiedModelPresets"
+    )]
+    pub(crate) composer_simplified_model_presets: Vec<String>,
     #[serde(default = "default_ui_scale", rename = "uiScale")]
     pub(crate) ui_scale: f64,
     #[serde(default = "default_theme", rename = "theme")]
@@ -1158,6 +1173,31 @@ fn default_selected_open_app_id() -> String {
     }
 }
 
+fn default_composer_model_picker_mode() -> String {
+    "simplified".to_string()
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_composer_simplified_model_presets() -> Vec<String> {
+    [
+        "luna:low",
+        "luna:medium",
+        "luna:high",
+        "luna:xhigh",
+        "luna:max",
+        "sol:medium",
+        "terra:max",
+        "sol:xhigh",
+        "sol:ultra",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect()
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -1191,6 +1231,9 @@ impl Default for AppSettings {
             cycle_workspace_prev_shortcut: default_cycle_workspace_prev_shortcut(),
             last_composer_model_id: None,
             last_composer_reasoning_effort: None,
+            composer_model_picker_mode: default_composer_model_picker_mode(),
+            composer_model_recommendation_highlights_enabled: true,
+            composer_simplified_model_presets: default_composer_simplified_model_presets(),
             ui_scale: 1.0,
             theme: default_theme(),
             usage_show_remaining: default_usage_show_remaining(),
@@ -1378,6 +1421,12 @@ mod tests {
         assert!(settings.steer_enabled);
         assert_eq!(settings.follow_up_message_behavior, "queue");
         assert!(settings.composer_follow_up_hint_enabled);
+        assert_eq!(settings.composer_model_picker_mode, "simplified");
+        assert!(settings.composer_model_recommendation_highlights_enabled);
+        assert_eq!(
+            settings.composer_simplified_model_presets,
+            default_composer_simplified_model_presets()
+        );
         assert!(settings.pause_queued_messages_when_response_required);
         assert!(settings.unified_exec_enabled);
         assert!(!settings.experimental_apps_enabled);

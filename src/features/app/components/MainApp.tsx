@@ -925,6 +925,7 @@ export default function MainApp() {
     handleSelectOpenAppId,
     handleToggleAutomaticAppUpdateChecks,
     persistProjectCopiesFolder,
+    handleModelPickerModeChange,
   } = useMainAppSettingsActions({
     appSettings,
     setAppSettings,
@@ -1652,6 +1653,10 @@ export default function MainApp() {
       experimentalAppsEnabled: appSettings.experimentalAppsEnabled,
       followUpMessageBehavior: appSettings.followUpMessageBehavior,
       composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,
+      composerModelPickerMode: appSettings.composerModelPickerMode,
+      composerModelRecommendationHighlightsEnabled:
+        appSettings.composerModelRecommendationHighlightsEnabled,
+      composerSimplifiedModelPresets: appSettings.composerSimplifiedModelPresets,
       dictationEnabled: appSettings.dictationEnabled,
       splitChatDiffView: appSettings.splitChatDiffView,
       gitDiffIgnoreWhitespaceChanges:
@@ -1712,6 +1717,7 @@ export default function MainApp() {
     gitState,
     selectedServiceTier: selectedServiceTier ?? null,
     onSelectServiceTier: handleSelectServiceTier,
+    onModelPickerModeChange: handleModelPickerModeChange,
     composerWorkspaceState,
     promptActions,
     worktreeState,

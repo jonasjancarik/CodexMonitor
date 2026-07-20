@@ -7,7 +7,7 @@ import {
   Minus,
   Sparkles,
 } from "lucide-react";
-import { useId, useState, type CSSProperties } from "react";
+import { useId, useMemo, useState, type CSSProperties } from "react";
 
 import {
   getRecommendedModelEffortAlternative,
@@ -16,6 +16,11 @@ import {
   type ModelEffortAlternative,
 } from "@/features/models/utils/modelRecommendations";
 import { formatReasoningEffortLabel } from "@/features/models/utils/reasoningEffort";
+import {
+  findModelForPreset,
+  getModelPickerPreset,
+  type ModelPickerPreset,
+} from "@/features/models/utils/modelPickerPresets";
 import type { ModelOption } from "@/types";
 
 const DEFAULT_EFFORT_ID = "__default__";
@@ -37,7 +42,15 @@ type ComposerModelGridProps = {
   selectedModelId: string | null;
   selectedEffort: string | null;
   selectedModelEfforts: string[];
-  onSelect: (modelId: string, effort: string | null) => void;
+  mode?: "simplified" | "all";
+  recommendationHighlightsEnabled?: boolean;
+  simplifiedPresetIds?: string[];
+  onModeChange?: (mode: "simplified" | "all") => void;
+  onSelect: (
+    modelId: string,
+    effort: string | null,
+    closePicker?: boolean,
+  ) => void;
 };
 
 function modelLabel(model: ModelOption): string {
@@ -118,6 +131,10 @@ export function ComposerModelGrid({
   selectedModelId,
   selectedEffort,
   selectedModelEfforts,
+  mode = "all",
+  recommendationHighlightsEnabled = true,
+  simplifiedPresetIds = [],
+  onModeChange = () => {},
   onSelect,
 }: ComposerModelGridProps) {
   const radioGroupName = useId();
@@ -129,7 +146,7 @@ export function ComposerModelGrid({
   const currentModels = models.filter((model) => !isOlderThanGpt56(model));
   const olderModels = models.filter(isOlderThanGpt56);
   const efforts = collectEfforts(models, selectedModelId, selectedModelEfforts);
-  const hasRecommendations = models.some((model) =>
+  const hasRecommendations = recommendationHighlightsEnabled && models.some((model) =>
     modelEfforts(model, selectedModelId, selectedModelEfforts).some((effort) =>
       isRecommendedModelEffort(model, effort),
     ),
@@ -138,6 +155,20 @@ export function ComposerModelGrid({
     "--composer-model-columns": efforts.length,
   } as CSSProperties;
   const previewedAlternative = hoveredAlternative ?? focusedAlternative;
+  const simplifiedPresets = useMemo(
+    () =>
+      simplifiedPresetIds.flatMap((id) => {
+        const preset = getModelPickerPreset(id);
+        if (!preset) return [];
+        const model = findModelForPreset(models, preset);
+        if (!model) return [];
+        const supportedEfforts = new Set(
+          modelEfforts(model, selectedModelId, selectedModelEfforts),
+        );
+        return supportedEfforts.has(preset.effort) ? [{ preset, model }] : [];
+      }),
+    [models, selectedModelEfforts, selectedModelId, simplifiedPresetIds],
+  );
 
   if (models.length === 0) {
     return <div className="composer-model-grid-empty">No models available</div>;
@@ -145,80 +176,113 @@ export function ComposerModelGrid({
 
   return (
     <div className="composer-model-grid-picker">
-      <div
-        className="composer-model-grid composer-model-grid--header"
-        style={gridStyle}
-      >
-        <span className="composer-model-grid-heading composer-model-grid-model-heading">
-          Model
-        </span>
-        {efforts.map((effort) => (
-          <span key={effort} className="composer-model-grid-heading">
-            {effort === DEFAULT_EFFORT_ID
-              ? "Default"
-              : formatReasoningEffortLabel(effort)}
-          </span>
-        ))}
+      <div className="composer-model-picker-view-switch" aria-label="Model picker view">
+        <button
+          type="button"
+          className={mode === "simplified" ? "is-active" : undefined}
+          aria-pressed={mode === "simplified"}
+          onClick={() => onModeChange("simplified")}
+        >
+          Simplified
+        </button>
+        <button
+          type="button"
+          className={mode === "all" ? "is-active" : undefined}
+          aria-pressed={mode === "all"}
+          onClick={() => onModeChange("all")}
+        >
+          All models
+        </button>
       </div>
 
-      {currentModels.length > 0 && (
-        <ModelRows
-          ariaLabel="Model and reasoning effort"
+      {mode === "simplified" ? (
+        <SimplifiedModelSlider
           disabled={disabled}
-          efforts={efforts}
-          gridStyle={gridStyle}
-          models={currentModels}
+          options={simplifiedPresets}
           onSelect={onSelect}
-          onFocusAlternative={setFocusedAlternative}
-          onHoverAlternative={setHoveredAlternative}
-          previewedAlternative={previewedAlternative}
-          radioGroupName={radioGroupName}
           selectedEffort={selectedEffort}
-          selectedModelEfforts={selectedModelEfforts}
           selectedModelId={selectedModelId}
         />
-      )}
-
-      {olderModels.length > 0 && (
-        <div className="composer-model-grid-older">
-          <button
-            type="button"
-            className="composer-model-grid-older-toggle"
-            aria-expanded={showOlderModels}
-            onClick={() => setShowOlderModels((visible) => !visible)}
+      ) : (
+        <>
+          <div
+            className="composer-model-grid composer-model-grid--header"
+            style={gridStyle}
           >
-            <span>Older models</span>
-            <span className="composer-model-grid-older-count">
-              {olderModels.length}
+            <span className="composer-model-grid-heading composer-model-grid-model-heading">
+              Model
             </span>
-            <ChevronDown
-              className={showOlderModels ? "is-open" : undefined}
-              size={13}
-              strokeWidth={1.8}
-              aria-hidden
-            />
-          </button>
-          {showOlderModels && (
+            {efforts.map((effort) => (
+              <span key={effort} className="composer-model-grid-heading">
+                {effort === DEFAULT_EFFORT_ID
+                  ? "Default"
+                  : formatReasoningEffortLabel(effort)}
+              </span>
+            ))}
+          </div>
+
+          {currentModels.length > 0 && (
             <ModelRows
-              ariaLabel="Older models and reasoning effort"
+              ariaLabel="Model and reasoning effort"
               disabled={disabled}
               efforts={efforts}
               gridStyle={gridStyle}
-              models={olderModels}
+              models={currentModels}
               onSelect={onSelect}
               onFocusAlternative={setFocusedAlternative}
               onHoverAlternative={setHoveredAlternative}
               previewedAlternative={previewedAlternative}
               radioGroupName={radioGroupName}
+              recommendationHighlightsEnabled={recommendationHighlightsEnabled}
               selectedEffort={selectedEffort}
               selectedModelEfforts={selectedModelEfforts}
               selectedModelId={selectedModelId}
             />
           )}
-        </div>
+
+          {olderModels.length > 0 && (
+            <div className="composer-model-grid-older">
+              <button
+                type="button"
+                className="composer-model-grid-older-toggle"
+                aria-expanded={showOlderModels}
+                onClick={() => setShowOlderModels((visible) => !visible)}
+              >
+                <span>Older models</span>
+                <span className="composer-model-grid-older-count">
+                  {olderModels.length}
+                </span>
+                <ChevronDown
+                  className={showOlderModels ? "is-open" : undefined}
+                  size={13}
+                  strokeWidth={1.8}
+                  aria-hidden
+                />
+              </button>
+              {showOlderModels && (
+                <ModelRows
+                  ariaLabel="Older models and reasoning effort"
+                  disabled={disabled}
+                  efforts={efforts}
+                  gridStyle={gridStyle}
+                  models={olderModels}
+                  onSelect={onSelect}
+                  onFocusAlternative={setFocusedAlternative}
+                  onHoverAlternative={setHoveredAlternative}
+                  previewedAlternative={previewedAlternative}
+                  radioGroupName={radioGroupName}
+                  recommendationHighlightsEnabled={recommendationHighlightsEnabled}
+                  selectedEffort={selectedEffort}
+                  selectedModelEfforts={selectedModelEfforts}
+                  selectedModelId={selectedModelId}
+                />
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {hasRecommendations && (
+      {mode === "all" && hasRecommendations && (
         <div
           className="composer-model-grid-recommendation-legend"
           title="Recommended for cost and performance based on independent coding benchmarks"
@@ -247,17 +311,99 @@ export function ComposerModelGrid({
   );
 }
 
+type SimplifiedModelSliderProps = {
+  disabled: boolean;
+  options: Array<{ preset: ModelPickerPreset; model: ModelOption }>;
+  selectedModelId: string | null;
+  selectedEffort: string | null;
+  onSelect: ComposerModelGridProps["onSelect"];
+};
+
+function SimplifiedModelSlider({
+  disabled,
+  options,
+  selectedModelId,
+  selectedEffort,
+  onSelect,
+}: SimplifiedModelSliderProps) {
+  const selectedIndex = options.findIndex(
+    ({ model, preset }) =>
+      model.id === selectedModelId && preset.effort === selectedEffort,
+  );
+  const sliderIndex = Math.max(selectedIndex, 0);
+  const selectedOption = selectedIndex >= 0 ? options[selectedIndex] : null;
+
+  if (options.length === 0) {
+    return (
+      <div className="composer-model-slider-empty">
+        No simplified options are available. Choose options in Settings or use All models.
+      </div>
+    );
+  }
+
+  const selectIndex = (index: number) => {
+    const option = options[index];
+    if (option) onSelect(option.model.id, option.preset.effort, false);
+  };
+
+  return (
+    <div className="composer-model-slider">
+      <div
+        className="composer-model-slider-control"
+        style={
+          {
+            "--composer-model-slider-progress": `${
+              options.length === 1
+                ? 0
+                : (sliderIndex / (options.length - 1)) * 100
+            }%`,
+          } as CSSProperties
+        }
+      >
+        <input
+          type="range"
+          min={0}
+          max={options.length - 1}
+          step={1}
+          value={sliderIndex}
+          disabled={disabled || options.length < 2}
+          aria-label="Simplified model and reasoning effort"
+          aria-valuetext={selectedOption?.preset.label ?? "Current selection is not included"}
+          onChange={(event) => selectIndex(Number(event.target.value))}
+        />
+        <div className="composer-model-slider-markers" aria-hidden>
+          {options.map(({ preset }, index) => (
+            <span
+              key={preset.id}
+              className={`${index <= sliderIndex ? "is-reached" : ""}${
+                preset.effort === "ultra" ? " is-ultra" : ""
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="composer-model-slider-caption">
+        {selectedOption ? selectedOption.preset.label : "Choose a simplified option"}
+      </div>
+      {selectedOption?.preset.effort === "ultra" && (
+        <div className="composer-model-slider-warning">Consumes usage limits faster</div>
+      )}
+    </div>
+  );
+}
+
 type ModelRowsProps = {
   ariaLabel: string;
   disabled: boolean;
   efforts: string[];
   gridStyle: CSSProperties;
   models: ModelOption[];
-  onSelect: (modelId: string, effort: string | null) => void;
+  onSelect: ComposerModelGridProps["onSelect"];
   onFocusAlternative: (alternative: ModelEffortAlternative | null) => void;
   onHoverAlternative: (alternative: ModelEffortAlternative | null) => void;
   previewedAlternative: ModelEffortAlternative | null;
   radioGroupName: string;
+  recommendationHighlightsEnabled: boolean;
   selectedEffort: string | null;
   selectedModelEfforts: string[];
   selectedModelId: string | null;
@@ -274,6 +420,7 @@ function ModelRows({
   onHoverAlternative,
   previewedAlternative,
   radioGroupName,
+  recommendationHighlightsEnabled,
   selectedEffort,
   selectedModelEfforts,
   selectedModelId,
@@ -301,6 +448,7 @@ function ModelRows({
             onHoverAlternative={onHoverAlternative}
             previewedAlternative={previewedAlternative}
             radioGroupName={radioGroupName}
+            recommendationHighlightsEnabled={recommendationHighlightsEnabled}
             selectedEffort={selectedEffort}
             selectedModelId={selectedModelId}
             supportedEfforts={supportedEfforts}
@@ -316,11 +464,12 @@ type ModelRowProps = {
   efforts: string[];
   model: ModelOption;
   modelIndex: number;
-  onSelect: (modelId: string, effort: string | null) => void;
+  onSelect: ComposerModelGridProps["onSelect"];
   onFocusAlternative: (alternative: ModelEffortAlternative | null) => void;
   onHoverAlternative: (alternative: ModelEffortAlternative | null) => void;
   previewedAlternative: ModelEffortAlternative | null;
   radioGroupName: string;
+  recommendationHighlightsEnabled: boolean;
   selectedEffort: string | null;
   selectedModelId: string | null;
   supportedEfforts: ReadonlySet<string>;
@@ -336,6 +485,7 @@ function ModelRow({
   onHoverAlternative,
   previewedAlternative,
   radioGroupName,
+  recommendationHighlightsEnabled,
   selectedEffort,
   selectedModelId,
   supportedEfforts,
@@ -359,9 +509,9 @@ function ModelRow({
           (effort === DEFAULT_EFFORT_ID
             ? selectedEffort === null
             : effort === selectedEffort);
-        const recommended =
+        const recommended = recommendationHighlightsEnabled &&
           supported && isRecommendedModelEffort(model, effort);
-        const alternative = supported
+        const alternative = recommendationHighlightsEnabled && supported
           ? getRecommendedModelEffortAlternative(model, effort)
           : null;
         const isRecommendationTarget =

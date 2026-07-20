@@ -108,6 +108,19 @@ const baseSettings: AppSettings = {
   cycleWorkspacePrevShortcut: null,
   lastComposerModelId: null,
   lastComposerReasoningEffort: null,
+  composerModelPickerMode: "simplified",
+  composerModelRecommendationHighlightsEnabled: true,
+  composerSimplifiedModelPresets: [
+    "luna:low",
+    "luna:medium",
+    "luna:high",
+    "luna:xhigh",
+    "luna:max",
+    "sol:medium",
+    "terra:max",
+    "sol:xhigh",
+    "sol:ultra",
+  ],
   uiScale: 1,
   theme: "system",
   usageShowRemaining: false,
@@ -1813,6 +1826,56 @@ describe("SettingsView Features", () => {
 });
 
 describe("SettingsView Composer", () => {
+  it("changes the default model picker view and recommendation highlighting", async () => {
+    const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
+    renderComposerSection({ onUpdateAppSettings });
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "All models",
+      }),
+    );
+    const recommendationTitle = screen.getByText("Show recommended options");
+    const recommendationRow = recommendationTitle.closest(".settings-toggle-row");
+    fireEvent.click(within(recommendationRow as HTMLElement).getByRole("button"));
+
+    await waitFor(() => {
+      expect(onUpdateAppSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ composerModelPickerMode: "all" }),
+      );
+      expect(onUpdateAppSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          composerModelRecommendationHighlightsEnabled: false,
+        }),
+      );
+    });
+  });
+
+  it("customizes and resets simplified model options", async () => {
+    const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
+    renderComposerSection({ onUpdateAppSettings });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /GPT-5.6 Sol · High/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset to recommended" }));
+
+    await waitFor(() => {
+      expect(onUpdateAppSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          composerSimplifiedModelPresets: expect.arrayContaining(["sol:high"]),
+        }),
+      );
+      expect(onUpdateAppSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          composerSimplifiedModelPresets: expect.arrayContaining([
+            "luna:low",
+            "terra:max",
+            "sol:ultra",
+          ]),
+        }),
+      );
+    });
+  });
+
   it("toggles follow-up hint visibility", async () => {
     const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
     renderComposerSection({

@@ -39,6 +39,10 @@ type ComposerMetaBarProps = {
   selectedServiceTier: ServiceTier | null;
   onSelectServiceTier: (tier: ServiceTier | null) => void;
   reasoningSupported: boolean;
+  modelPickerMode: "simplified" | "all";
+  recommendationHighlightsEnabled: boolean;
+  simplifiedModelPresets: string[];
+  onModelPickerModeChange: (mode: "simplified" | "all") => void;
   accessMode: AccessMode;
   onSelectAccessMode: (mode: AccessMode) => void;
   codexArgsOptions?: CodexArgsOption[];
@@ -61,6 +65,10 @@ export function ComposerMetaBar({
   selectedServiceTier,
   onSelectServiceTier,
   reasoningSupported,
+  modelPickerMode,
+  recommendationHighlightsEnabled,
+  simplifiedModelPresets,
+  onModelPickerModeChange,
   accessMode,
   onSelectAccessMode,
   codexArgsOptions = [],
@@ -103,10 +111,14 @@ export function ComposerMetaBar({
   const showSpeedSection = supportsFastTier || selectedServiceTier === "fast";
 
   const closeModelSettings = () => modelSettingsMenu.close();
-  const selectModelEffort = (id: string, effort: string | null) => {
+  const selectModelEffort = (
+    id: string,
+    effort: string | null,
+    closePicker = true,
+  ) => {
     onSelectModel(id);
     onSelectEffort(effort);
-    closeModelSettings();
+    if (closePicker) closeModelSettings();
   };
   const toggleFastTier = () => {
     onSelectServiceTier(selectedServiceTier === "fast" ? null : "fast");
@@ -220,6 +232,10 @@ export function ComposerMetaBar({
                 selectedModelId={selectedModelId}
                 selectedEffort={selectedEffort}
                 selectedModelEfforts={reasoningOptions}
+                mode={modelPickerMode}
+                recommendationHighlightsEnabled={recommendationHighlightsEnabled}
+                simplifiedPresetIds={simplifiedModelPresets}
+                onModeChange={onModelPickerModeChange}
                 onSelect={selectModelEffort}
               />
 

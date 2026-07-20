@@ -27,6 +27,9 @@ type UseMainAppLayoutSurfacesArgs = {
     | "experimentalAppsEnabled"
     | "followUpMessageBehavior"
     | "composerFollowUpHintEnabled"
+    | "composerModelPickerMode"
+    | "composerModelRecommendationHighlightsEnabled"
+    | "composerSimplifiedModelPresets"
     | "dictationEnabled"
     | "splitChatDiffView"
     | "gitDiffIgnoreWhitespaceChanges"
@@ -154,6 +157,7 @@ type UseMainAppLayoutSurfacesArgs = {
   onSelectEffort: ComposerProps["onSelectEffort"];
   selectedServiceTier: ComposerProps["selectedServiceTier"];
   onSelectServiceTier: ComposerProps["onSelectServiceTier"];
+  onModelPickerModeChange: NonNullable<ComposerProps["onModelPickerModeChange"]>;
   reasoningSupported: boolean;
   codexArgsOptions: ComposerProps["codexArgsOptions"];
   selectedCodexArgsOverride: ComposerProps["selectedCodexArgsOverride"];
@@ -317,6 +321,7 @@ function buildPrimarySurface({
   onSelectEffort,
   selectedServiceTier,
   onSelectServiceTier,
+  onModelPickerModeChange,
   reasoningSupported,
   codexArgsOptions,
   selectedCodexArgsOverride,
@@ -483,6 +488,11 @@ function buildPrimarySurface({
           steerAvailable: composerWorkspaceState.steerAvailable,
           followUpMessageBehavior: appSettings.followUpMessageBehavior,
           composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,
+          modelPickerMode: appSettings.composerModelPickerMode,
+          recommendationHighlightsEnabled:
+            appSettings.composerModelRecommendationHighlightsEnabled,
+          simplifiedModelPresets: appSettings.composerSimplifiedModelPresets,
+          onModelPickerModeChange,
           isProcessing: composerWorkspaceState.isProcessing,
           draftText: composerWorkspaceState.activeDraft,
           onDraftChange: composerWorkspaceState.handleDraftChange,
@@ -1035,6 +1045,7 @@ export function useMainAppLayoutSurfaces({
   onSelectEffort,
   selectedServiceTier,
   onSelectServiceTier,
+  onModelPickerModeChange,
   reasoningSupported,
   codexArgsOptions,
   selectedCodexArgsOverride,
@@ -1198,6 +1209,7 @@ export function useMainAppLayoutSurfaces({
     onSelectEffort,
     selectedServiceTier,
     onSelectServiceTier,
+    onModelPickerModeChange,
     reasoningSupported,
     codexArgsOptions,
     selectedCodexArgsOverride,

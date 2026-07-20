@@ -4,17 +4,17 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex as StdMutex};
 
 use super::settings::{apply_workspace_settings_update, sort_workspaces};
+#[cfg(target_os = "windows")]
+use super::worktree::unique_worktree_path_for_rename;
 use super::worktree::{
     build_clone_destination_path, sanitize_clone_dir_name, sanitize_worktree_name,
 };
-#[cfg(target_os = "windows")]
-use super::worktree::unique_worktree_path_for_rename;
 use crate::backend::app_server::WorkspaceSession;
+#[cfg(target_os = "windows")]
+use crate::shared::workspaces_core::update_workspace_settings_core;
 use crate::shared::workspaces_core::{
     remove_workspace_core, remove_worktree_core, rename_worktree_core,
 };
-#[cfg(target_os = "windows")]
-use crate::shared::workspaces_core::update_workspace_settings_core;
 use crate::storage::{read_workspaces, write_workspaces};
 use crate::types::{
     AppSettings, WorkspaceEntry, WorkspaceInfo, WorkspaceKind, WorkspaceSettings, WorktreeInfo,

@@ -232,7 +232,9 @@ fn get_git_diffs_populates_untracked_file_unstaged_diff_and_display_hunks() {
     let tracked_path = root.join("tracked.txt");
     fs::write(&tracked_path, "tracked\n").expect("write tracked file");
     let mut index = repo.index().expect("repo index");
-    index.add_path(Path::new("tracked.txt")).expect("add tracked path");
+    index
+        .add_path(Path::new("tracked.txt"))
+        .expect("add tracked path");
     index.write().expect("write index");
     let tree_id = index.write_tree().expect("write tree");
     let tree = repo.find_tree(tree_id).expect("find tree");
@@ -296,7 +298,9 @@ fn apply_git_display_hunk_stages_untracked_file_hunks() {
     let tracked_path = root.join("tracked.txt");
     fs::write(&tracked_path, "tracked\n").expect("write tracked file");
     let mut index = repo.index().expect("repo index");
-    index.add_path(Path::new("tracked.txt")).expect("add tracked path");
+    index
+        .add_path(Path::new("tracked.txt"))
+        .expect("add tracked path");
     index.write().expect("write index");
     let tree_id = index.write_tree().expect("write tree");
     let tree = repo.find_tree(tree_id).expect("find tree");
@@ -348,7 +352,14 @@ fn apply_git_display_hunk_stages_untracked_file_hunks() {
     assert!(result.applied, "display hunk should be applied");
 
     let cached = Command::new("git")
-        .args(["diff", "--cached", "--no-color", "-U0", "--", "new-file.txt"])
+        .args([
+            "diff",
+            "--cached",
+            "--no-color",
+            "-U0",
+            "--",
+            "new-file.txt",
+        ])
         .current_dir(&root)
         .output()
         .expect("run cached diff");

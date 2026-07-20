@@ -56,9 +56,22 @@ export function useMainAppSettingsActions({
     [appSettings, queueSaveSettings],
   );
 
+  const handleModelPickerModeChange = useCallback(
+    (mode: AppSettings["composerModelPickerMode"]) => {
+      setAppSettings((current) => {
+        if (current.composerModelPickerMode === mode) return current;
+        const nextSettings = { ...current, composerModelPickerMode: mode };
+        void queueSaveSettings(nextSettings);
+        return nextSettings;
+      });
+    },
+    [queueSaveSettings, setAppSettings],
+  );
+
   return {
     handleSelectOpenAppId,
     handleToggleAutomaticAppUpdateChecks,
     persistProjectCopiesFolder,
+    handleModelPickerModeChange,
   };
 }

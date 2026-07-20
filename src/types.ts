@@ -267,6 +267,9 @@ export type AppSettings = {
   cycleWorkspacePrevShortcut: string | null;
   lastComposerModelId: string | null;
   lastComposerReasoningEffort: string | null;
+  composerModelPickerMode: "simplified" | "all";
+  composerModelRecommendationHighlightsEnabled: boolean;
+  composerSimplifiedModelPresets: string[];
   uiScale: number;
   theme: ThemePreference;
   usageShowRemaining: boolean;

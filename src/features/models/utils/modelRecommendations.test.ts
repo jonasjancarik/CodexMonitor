@@ -56,14 +56,14 @@ describe("isRecommendedModelEffort", () => {
 
 describe("getRecommendedModelEffortAlternative", () => {
   it.each([
-    ["gpt-5.6-sol", "none", "luna", "low"],
-    ["gpt-5.6-sol", "low", "luna", "medium"],
+    ["gpt-5.6-sol", "none", "luna", "medium"],
+    ["gpt-5.6-sol", "low", "luna", "xhigh"],
     ["gpt-5.6-sol", "high", "terra", "max"],
     ["gpt-5.6-sol", "max", "sol", "xhigh"],
     ["gpt-5.6-terra", "none", "luna", "low"],
     ["gpt-5.6-terra", "low", "luna", "medium"],
     ["gpt-5.6-terra", "medium", "luna", "high"],
-    ["gpt-5.6-terra", "high", "luna", "xhigh"],
+    ["gpt-5.6-terra", "high", "luna", "max"],
     ["gpt-5.6-terra", "xhigh", "luna", "max"],
     ["gpt-5.6-terra", "ultra", "terra", "max"],
   ])(

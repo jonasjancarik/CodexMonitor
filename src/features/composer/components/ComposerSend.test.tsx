@@ -75,6 +75,10 @@ type HarnessProps = {
   reasoningSupported?: boolean;
   selectedServiceTier?: ServiceTier | null;
   onSelectServiceTier?: (tier: ServiceTier | null) => void;
+  modelPickerMode?: "simplified" | "all";
+  recommendationHighlightsEnabled?: boolean;
+  simplifiedModelPresets?: string[];
+  onModelPickerModeChange?: (mode: "simplified" | "all") => void;
 };
 
 function ComposerHarness({
@@ -92,6 +96,10 @@ function ComposerHarness({
   reasoningSupported = false,
   selectedServiceTier = null,
   onSelectServiceTier = () => {},
+  modelPickerMode = "all",
+  recommendationHighlightsEnabled = true,
+  simplifiedModelPresets = [],
+  onModelPickerModeChange = () => {},
 }: HarnessProps) {
   const [draftText, setDraftText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -118,6 +126,10 @@ function ComposerHarness({
       selectedServiceTier={selectedServiceTier}
       onSelectServiceTier={onSelectServiceTier}
       reasoningSupported={reasoningSupported}
+      modelPickerMode={modelPickerMode}
+      recommendationHighlightsEnabled={recommendationHighlightsEnabled}
+      simplifiedModelPresets={simplifiedModelPresets}
+      onModelPickerModeChange={onModelPickerModeChange}
       accessMode="current"
       onSelectAccessMode={() => {}}
       skills={[]}
@@ -211,6 +223,87 @@ describe("Composer send triggers", () => {
     fireEvent.click(screen.getByRole("switch", { name: /Fast/i }));
 
     expect(onSelectServiceTier).toHaveBeenCalledWith("fast");
+  });
+
+  it("selects capability-ordered presets from the simplified slider", () => {
+    const onSelectModel = vi.fn();
+    const onSelectEffort = vi.fn();
+    const onModelPickerModeChange = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={() => {}}
+        models={[
+          modelOption("gpt-5.6-luna", "GPT-5.6 Luna", ["low", "medium"]),
+          modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["xhigh", "ultra"]),
+        ]}
+        selectedModelId="gpt-5.6-luna"
+        onSelectModel={onSelectModel}
+        reasoningOptions={["low", "medium"]}
+        selectedEffort="low"
+        onSelectEffort={onSelectEffort}
+        reasoningSupported={true}
+        modelPickerMode="simplified"
+        simplifiedModelPresets={[
+          "luna:low",
+          "luna:medium",
+          "sol:xhigh",
+          "sol:ultra",
+        ]}
+        onModelPickerModeChange={onModelPickerModeChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+    const slider = screen.getByRole("slider", {
+      name: "Simplified model and reasoning effort",
+    });
+    expect(slider.getAttribute("aria-valuetext")).toBe("GPT-5.6 Luna · Low");
+
+    fireEvent.change(slider, { target: { value: "2" } });
+    expect(onSelectModel).toHaveBeenCalledWith("gpt-5.6-sol");
+    expect(onSelectEffort).toHaveBeenCalledWith("xhigh");
+
+    fireEvent.click(screen.getByRole("button", { name: "All models" }));
+    expect(onModelPickerModeChange).toHaveBeenCalledWith("all");
+  });
+
+  it("keeps Ultra in the simplified picker with the usage warning", () => {
+    render(
+      <ComposerHarness
+        onSend={() => {}}
+        models={[modelOption("gpt-5.6-sol", "GPT-5.6 Sol", ["xhigh", "ultra"])]}
+        selectedModelId="gpt-5.6-sol"
+        reasoningOptions={["xhigh", "ultra"]}
+        selectedEffort="ultra"
+        reasoningSupported={true}
+        modelPickerMode="simplified"
+        simplifiedModelPresets={["sol:xhigh", "sol:ultra"]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+    expect(screen.getByText("GPT-5.6 Sol · Ultra")).toBeTruthy();
+    expect(screen.getByText("Consumes usage limits faster")).toBeTruthy();
+  });
+
+  it("can hide recommendation styling in the complete model grid", () => {
+    render(
+      <ComposerHarness
+        onSend={() => {}}
+        models={[modelOption("gpt-5.6-luna", "GPT-5.6 Luna", ["low"])]}
+        selectedModelId="gpt-5.6-luna"
+        reasoningOptions={["low"]}
+        selectedEffort="low"
+        reasoningSupported={true}
+        recommendationHighlightsEnabled={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+    expect(screen.queryByText("Recommended value")).toBeNull();
+    expect(
+      screen.getByRole("radio", { name: "GPT-5.6 Luna, Low reasoning" }),
+    ).toBeTruthy();
   });
 
   it("marks benchmark-informed model and effort recommendations", () => {

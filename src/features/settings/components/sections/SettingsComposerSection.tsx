@@ -4,6 +4,11 @@ import {
   SettingsToggleRow,
   SettingsToggleSwitch,
 } from "@/features/design-system/components/settings/SettingsPrimitives";
+import {
+  DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS,
+  MODEL_PICKER_PRESET_CATALOG,
+  normalizeSimplifiedModelPresetIds,
+} from "@/features/models/utils/modelPickerPresets";
 
 type ComposerPreset = AppSettings["composerEditorPreset"];
 
@@ -25,11 +30,130 @@ export function SettingsComposerSection({
   onUpdateAppSettings,
 }: SettingsComposerSectionProps) {
   const steerUnavailable = !appSettings.steerEnabled;
+  const selectedSimplifiedPresets = new Set(
+    appSettings.composerSimplifiedModelPresets,
+  );
+  const updateSimplifiedPreset = (id: string, included: boolean) => {
+    const next = new Set(selectedSimplifiedPresets);
+    if (included) next.add(id);
+    else if (next.size > 1) next.delete(id);
+    void onUpdateAppSettings({
+      ...appSettings,
+      composerSimplifiedModelPresets: normalizeSimplifiedModelPresetIds(
+        Array.from(next),
+      ),
+    });
+  };
+
   return (
     <SettingsSection
       title="Composer"
       subtitle="Control helpers and formatting behavior inside the message editor."
     >
+      <div className="settings-subsection-title">Model picker</div>
+      <div className="settings-subsection-subtitle">
+        Choose a focused slider or the complete model grid.
+      </div>
+      <div className="settings-field">
+        <div className="settings-field-label">Default view</div>
+        <div
+          className={`settings-segmented${
+            appSettings.composerModelPickerMode === "all"
+              ? " is-second-active"
+              : ""
+          }`}
+          aria-label="Default model picker view"
+        >
+          {(["simplified", "all"] as const).map((mode) => (
+            <label
+              key={mode}
+              className={`settings-segmented-option${
+                appSettings.composerModelPickerMode === mode ? " is-active" : ""
+              }`}
+            >
+              <input
+                className="settings-segmented-input"
+                type="radio"
+                name="model-picker-mode"
+                value={mode}
+                checked={appSettings.composerModelPickerMode === mode}
+                onChange={() =>
+                  void onUpdateAppSettings({
+                    ...appSettings,
+                    composerModelPickerMode: mode,
+                  })
+                }
+              />
+              <span className="settings-segmented-option-label">
+                {mode === "simplified" ? "Simplified" : "All models"}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <SettingsToggleRow
+        title="Show recommended options"
+        subtitle="Highlights strong value choices in the complete model grid."
+      >
+        <SettingsToggleSwitch
+          pressed={appSettings.composerModelRecommendationHighlightsEnabled}
+          onClick={() =>
+            void onUpdateAppSettings({
+              ...appSettings,
+              composerModelRecommendationHighlightsEnabled:
+                !appSettings.composerModelRecommendationHighlightsEnabled,
+            })
+          }
+        />
+      </SettingsToggleRow>
+      <div className="settings-field settings-model-picker-options">
+        <div className="settings-model-picker-options-header">
+          <div>
+            <div className="settings-field-label">Simplified options</div>
+            <div className="settings-help">
+              Select the model and effort combinations shown on the slider. They
+              stay ordered by measured capability, with Ultra last.
+            </div>
+          </div>
+          <button
+            type="button"
+            className="ghost settings-model-picker-reset"
+            onClick={() =>
+              void onUpdateAppSettings({
+                ...appSettings,
+                composerSimplifiedModelPresets: [
+                  ...DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS,
+                ],
+              })
+            }
+          >
+            Reset to recommended
+          </button>
+        </div>
+        <div className="settings-model-picker-preset-list">
+          {MODEL_PICKER_PRESET_CATALOG.map((preset) => (
+            <label key={preset.id} className="settings-model-picker-preset">
+              <input
+                type="checkbox"
+                checked={selectedSimplifiedPresets.has(preset.id)}
+                onChange={(event) =>
+                  updateSimplifiedPreset(preset.id, event.target.checked)
+                }
+              />
+              <span className="settings-model-picker-preset-label">
+                {preset.label}
+              </span>
+              {preset.recommended && (
+                <span className="settings-model-picker-preset-badge">
+                  Recommended
+                </span>
+              )}
+            </label>
+          ))}
+        </div>
+      </div>
+      <div className="settings-divider" />
+      <div className="settings-subsection-title">Messages</div>
       <div className="settings-field">
         <div className="settings-field-label">Follow-up behavior</div>
         <div className={`settings-segmented${appSettings.followUpMessageBehavior === "steer" ? " is-second-active" : ""}`} aria-label="Follow-up behavior">

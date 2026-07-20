@@ -73,6 +73,10 @@ type ComposerProps = {
   selectedServiceTier: ServiceTier | null;
   onSelectServiceTier: (tier: ServiceTier | null) => void;
   reasoningSupported: boolean;
+  modelPickerMode?: "simplified" | "all";
+  recommendationHighlightsEnabled?: boolean;
+  simplifiedModelPresets?: string[];
+  onModelPickerModeChange?: (mode: "simplified" | "all") => void;
   codexArgsOptions?: CodexArgsOption[];
   selectedCodexArgsOverride?: string | null;
   onSelectCodexArgsOverride?: (value: string | null) => void;
@@ -185,6 +189,10 @@ export const Composer = memo(function Composer({
   selectedServiceTier,
   onSelectServiceTier,
   reasoningSupported,
+  modelPickerMode = "all",
+  recommendationHighlightsEnabled = true,
+  simplifiedModelPresets = [],
+  onModelPickerModeChange = () => {},
   codexArgsOptions = [],
   selectedCodexArgsOverride = null,
   onSelectCodexArgsOverride,
@@ -693,6 +701,10 @@ export const Composer = memo(function Composer({
         selectedServiceTier={selectedServiceTier}
         onSelectServiceTier={onSelectServiceTier}
         reasoningSupported={reasoningSupported}
+        modelPickerMode={modelPickerMode}
+        recommendationHighlightsEnabled={recommendationHighlightsEnabled}
+        simplifiedModelPresets={simplifiedModelPresets}
+        onModelPickerModeChange={onModelPickerModeChange}
         codexArgsOptions={codexArgsOptions}
         selectedCodexArgsOverride={selectedCodexArgsOverride}
         onSelectCodexArgsOverride={onSelectCodexArgsOverride}

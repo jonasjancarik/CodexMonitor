@@ -23,7 +23,8 @@ CodexMonitor is a Tauri app for orchestrating multiple Codex agents across local
 - Compose with image attachments (picker, drag/drop, paste) and configurable follow-up behavior (`Queue` vs `Steer` while a run is active).
 - Use `Shift+Cmd+Enter` (macOS) or `Shift+Ctrl+Enter` (Windows/Linux) to send the opposite follow-up action for a single message.
 - Autocomplete for skills (`$`), prompts (`/prompts:`), reviews (`/review`), and file paths (`@`).
-- Capability-aware model and reasoning grid with benchmark-informed value recommendations and hover/focus hints for preferred alternatives, pre-GPT-5.6 models tucked under **Older models**, and a compact Fast speed switch, plus collaboration modes (when enabled), access modes with automatic approval review as the default, and the context usage ring.
+- Model picker with a capability-ordered simplified slider or the complete model-and-reasoning grid. Settings control the slider options and recommendation highlights; pre-GPT-5.6 models stay tucked under **Older models**, Ultra remains available with its usage warning, and Fast is a compact switch.
+- Collaboration modes (when enabled), access modes with automatic approval review as the default, and the context usage ring.
 - Dictation with hold-to-talk shortcuts and live waveform (Whisper).
 - Render reasoning/tool/diff items, show automatic approval review decisions, and handle approval or MCP server response prompts.
 

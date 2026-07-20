@@ -19,6 +19,10 @@ import { normalizeOpenAppTargets } from "@app/utils/openApp";
 import { getDefaultInterruptShortcut, isMacPlatform } from "@utils/shortcuts";
 import { isMobilePlatform } from "@utils/platformPaths";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
+import {
+  DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS,
+  normalizeSimplifiedModelPresetIds,
+} from "@/features/models/utils/modelPickerPresets";
 
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
 const allowedPersonality = new Set(["friendly", "pragmatic"]);
@@ -165,6 +169,9 @@ function buildDefaultSettings(): AppSettings {
     cycleWorkspacePrevShortcut: isMac ? "cmd+shift+up" : "ctrl+alt+shift+up",
     lastComposerModelId: null,
     lastComposerReasoningEffort: null,
+    composerModelPickerMode: "simplified",
+    composerModelRecommendationHighlightsEnabled: true,
+    composerSimplifiedModelPresets: [...DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS],
     uiScale: UI_SCALE_DEFAULT,
     theme: "system",
     usageShowRemaining: false,
@@ -270,6 +277,15 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
       typeof settings.composerFollowUpHintEnabled === "boolean"
         ? settings.composerFollowUpHintEnabled
         : true,
+    composerModelPickerMode:
+      settings.composerModelPickerMode === "all" ? "all" : "simplified",
+    composerModelRecommendationHighlightsEnabled:
+      typeof settings.composerModelRecommendationHighlightsEnabled === "boolean"
+        ? settings.composerModelRecommendationHighlightsEnabled
+        : true,
+    composerSimplifiedModelPresets: normalizeSimplifiedModelPresetIds(
+      settings.composerSimplifiedModelPresets,
+    ),
     reviewDeliveryMode:
       settings.reviewDeliveryMode === "detached" ? "detached" : "inline",
     chatHistoryScrollbackItems,
