@@ -895,6 +895,134 @@
   z-index: 45;
 }
 
+.composer-access-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.composer-access-menu-trigger {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--cm-surface-panel-strong);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-dur-fast) var(--ds-ease-out-soft),
+    color var(--ds-dur-fast) var(--ds-ease-out-soft);
+}
+
+.composer-access-menu-trigger:hover,
+.composer-access-menu-trigger.is-open {
+  background: var(--cm-surface-panel-solid);
+  color: var(--text-strong);
+}
+
+.composer-access-menu-trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.composer-access-menu-trigger:disabled {
+  background: var(--surface-control-disabled);
+  color: var(--text-fainter);
+  cursor: not-allowed;
+}
+
+.composer-access-menu-trigger[data-access-mode="full-access"]
+  .composer-access-menu-trigger-icon {
+  color: var(--accent-warning-strong, #b45309);
+}
+
+.composer-access-menu-trigger-label {
+  white-space: nowrap;
+}
+
+.composer-access-menu-chevron {
+  transition: transform var(--ds-dur-fast) var(--ds-ease-out-soft);
+}
+
+.composer-access-menu-trigger.is-open .composer-access-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.composer-access-menu-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 45;
+  display: grid;
+  width: 276px;
+  gap: 2px;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.composer-access-menu-option {
+  min-height: 48px;
+  align-items: flex-start;
+  padding: 7px 8px;
+}
+
+.composer-access-menu-option .ds-popover-item-icon {
+  margin-top: 2px;
+}
+
+.composer-access-menu-option[data-access-mode="auto-review"]
+  .ds-popover-item-icon {
+  color: var(--status-success);
+}
+
+.composer-access-menu-option[data-access-mode="full-access"]
+  .ds-popover-item-icon {
+  color: var(--accent-warning-strong, #b45309);
+}
+
+.composer-access-menu-option .ds-popover-item-label {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.composer-access-menu-option-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+}
+
+.composer-access-menu-option-title {
+  color: var(--text-strong);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.composer-access-menu-option-description {
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.composer-access-menu-check {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: var(--text-emphasis);
+  opacity: 0;
+}
+
+.composer-access-menu-check[data-visible="true"] {
+  opacity: 1;
+}
+
 .composer-model-grid-picker {
   display: grid;
   gap: 10px;

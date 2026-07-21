@@ -14,6 +14,7 @@ import {
 import { modelSupportsFastServiceTier } from "../../models/utils/serviceTiers";
 import { formatReasoningEffortLabel } from "../../models/utils/reasoningEffort";
 import type { CodexArgsOption } from "../../threads/utils/codexArgsProfiles";
+import { ComposerAccessModeMenu } from "./ComposerAccessModeMenu";
 import { ComposerModelGrid } from "./ComposerModelGrid";
 
 function shortModelLabel(model: ModelOption | null): string {
@@ -295,39 +296,11 @@ export function ComposerMetaBar({
             </select>
           </div>
         )}
-        <div className="composer-select-wrap">
-          <span className="composer-icon" aria-hidden>
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 4l7 3v5c0 4.5-3 7.5-7 8-4-0.5-7-3.5-7-8V7l7-3z"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9.5 12.5l1.8 1.8 3.7-4"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <select
-            className="composer-select composer-select--approval"
-            aria-label="Agent access"
-            disabled={disabled}
-            value={accessMode}
-            onChange={(event) =>
-              onSelectAccessMode(event.target.value as AccessMode)
-            }
-          >
-            <option value="read-only">Read only</option>
-            <option value="current">On-Request</option>
-            <option value="auto-review">Auto-review</option>
-            <option value="full-access">Full access</option>
-          </select>
-        </div>
+        <ComposerAccessModeMenu
+          disabled={disabled}
+          value={accessMode}
+          onChange={onSelectAccessMode}
+        />
       </div>
       <div className="composer-context">
         <div
