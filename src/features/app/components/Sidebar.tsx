@@ -8,6 +8,7 @@ import type {
   WorkspaceInfo,
 } from "../../../types";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { MouseEvent, RefObject } from "react";
 import { FolderOpen } from "lucide-react";
 import { SidebarBottomRail } from "./SidebarBottomRail";
@@ -15,6 +16,7 @@ import { SidebarHeader } from "./SidebarHeader";
 import { SidebarSearchBar } from "./SidebarSearchBar";
 import { SidebarThreadsOnlySection } from "./SidebarThreadsOnlySection";
 import { SidebarWorkspaceGroups } from "./SidebarWorkspaceGroups";
+import { ThreadContextMenu } from "./ThreadContextMenu";
 import { PinnedThreadList } from "./PinnedThreadList";
 import {
   countRootRows,
@@ -243,19 +245,24 @@ export const Sidebar = memo(function Sidebar({
     COLLAPSED_GROUPS_STORAGE_KEY,
   );
   const { getThreadRows } = useThreadRows(threadParentById);
-  const { showThreadMenu, showWorkspaceMenu, showWorktreeMenu, showCloneMenu } =
-    useSidebarMenus({
-      onDeleteThread,
-      onSyncThread,
-      onPinThread: pinThread,
-      onUnpinThread: unpinThread,
-      isThreadPinned,
-      onRenameThread,
-      onReloadWorkspaceThreads,
-      onRestartWorkspaceSession,
-      onDeleteWorkspace,
-      onDeleteWorktree,
-    });
+  const {
+    threadMenu,
+    showThreadMenu,
+    closeThreadMenu,
+    showWorkspaceMenu,
+    showWorktreeMenu,
+    showCloneMenu,
+  } = useSidebarMenus({
+    onReloadWorkspaceThreads,
+    onRestartWorkspaceSession,
+    onDeleteWorkspace,
+    onDeleteWorktree,
+  });
+  const threadMenuController = useMenuController({
+    open: Boolean(threadMenu),
+    onDismiss: closeThreadMenu,
+  });
+  const { containerRef: threadMenuRef } = threadMenuController;
   const {
     sessionPercent,
     weeklyPercent,
@@ -1049,6 +1056,21 @@ export const Sidebar = memo(function Sidebar({
         onSwitchAccount={onSwitchAccount}
         onCancelSwitchAccount={onCancelSwitchAccount}
       />
+      {threadMenu &&
+        createPortal(
+          <ThreadContextMenu
+            ref={threadMenuRef}
+            anchor={threadMenu}
+            isPinned={isThreadPinned(threadMenu.workspaceId, threadMenu.threadId)}
+            onClose={closeThreadMenu}
+            onRename={onRenameThread}
+            onSync={onSyncThread}
+            onPin={pinThread}
+            onUnpin={unpinThread}
+            onArchive={onDeleteThread}
+          />,
+          document.body,
+        )}
     </aside>
   );
 });

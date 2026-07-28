@@ -71,6 +71,51 @@ const baseProps = {
 };
 
 describe("Sidebar", () => {
+  it("uses an in-app context menu for thread actions", () => {
+    const onRenameThread = vi.fn();
+    const pinThread = vi.fn(() => true);
+    const workspace = {
+      id: "ws-1",
+      name: "Alpha Project",
+      path: "/tmp/alpha",
+      connected: true,
+      settings: { sidebarCollapsed: false },
+    };
+
+    render(
+      <Sidebar
+        {...baseProps}
+        workspaces={[workspace]}
+        groupedWorkspaces={[
+          {
+            id: null,
+            name: "Workspaces",
+            workspaces: [workspace],
+          },
+        ]}
+        threadsByWorkspace={{
+          "ws-1": [{ id: "thread-1", name: "Fix Linux menu", updatedAt: Date.now() }],
+        }}
+        onRenameThread={onRenameThread}
+        pinThread={pinThread}
+      />,
+    );
+
+    fireEvent.contextMenu(screen.getByText("Fix Linux menu"), {
+      clientX: 120,
+      clientY: 80,
+    });
+
+    const menu = screen.getByRole("menu", { name: "Conversation actions" });
+    expect(menu.className).toContain("thread-context-menu");
+    expect(screen.getByRole("menuitem", { name: "Pin" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+
+    expect(onRenameThread).toHaveBeenCalledWith("ws-1", "thread-1");
+    expect(screen.queryByRole("menu", { name: "Conversation actions" })).toBeNull();
+  });
+
   it("toggles the search bar from the header icon", () => {
     render(<Sidebar {...baseProps} />);
 

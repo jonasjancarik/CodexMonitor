@@ -1,4 +1,4 @@
-import { useCallback, type MouseEvent } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { LogicalPosition } from "@tauri-apps/api/dpi";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -6,14 +6,9 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { WorkspaceInfo } from "../../../types";
 import { pushErrorToast } from "../../../services/toasts";
 import { fileManagerName } from "../../../utils/platformPaths";
+import type { ThreadContextMenuAnchor } from "../components/sidebarTypes";
 
 type SidebarMenuHandlers = {
-  onDeleteThread: (workspaceId: string, threadId: string) => void;
-  onSyncThread: (workspaceId: string, threadId: string) => void;
-  onPinThread: (workspaceId: string, threadId: string) => void;
-  onUnpinThread: (workspaceId: string, threadId: string) => void;
-  isThreadPinned: (workspaceId: string, threadId: string) => boolean;
-  onRenameThread: (workspaceId: string, threadId: string) => void;
   onReloadWorkspaceThreads: (workspaceId: string) => void;
   onRestartWorkspaceSession: (workspaceId: string) => void;
   onDeleteWorkspace: (workspaceId: string) => void;
@@ -21,19 +16,15 @@ type SidebarMenuHandlers = {
 };
 
 export function useSidebarMenus({
-  onDeleteThread,
-  onSyncThread,
-  onPinThread,
-  onUnpinThread,
-  isThreadPinned,
-  onRenameThread,
   onReloadWorkspaceThreads,
   onRestartWorkspaceSession,
   onDeleteWorkspace,
   onDeleteWorktree,
 }: SidebarMenuHandlers) {
+  const [threadMenu, setThreadMenu] = useState<ThreadContextMenuAnchor | null>(null);
+
   const showThreadMenu = useCallback(
-    async (
+    (
       event: MouseEvent,
       workspaceId: string,
       threadId: string,
@@ -41,59 +32,17 @@ export function useSidebarMenus({
     ) => {
       event.preventDefault();
       event.stopPropagation();
-      const renameItem = await MenuItem.new({
-        text: "Rename",
-        action: () => onRenameThread(workspaceId, threadId),
+      setThreadMenu({
+        workspaceId,
+        threadId,
+        canPin,
+        top: event.clientY,
+        left: event.clientX,
       });
-      const syncItem = await MenuItem.new({
-        text: "Sync from server",
-        action: () => onSyncThread(workspaceId, threadId),
-      });
-      const archiveItem = await MenuItem.new({
-        text: "Archive",
-        action: () => onDeleteThread(workspaceId, threadId),
-      });
-      const copyItem = await MenuItem.new({
-        text: "Copy ID",
-        action: async () => {
-          try {
-            await navigator.clipboard.writeText(threadId);
-          } catch {
-            // Clipboard failures are non-fatal here.
-          }
-        },
-      });
-      const items = [renameItem, syncItem];
-      if (canPin) {
-        const isPinned = isThreadPinned(workspaceId, threadId);
-        items.push(
-          await MenuItem.new({
-            text: isPinned ? "Unpin" : "Pin",
-            action: () => {
-              if (isPinned) {
-                onUnpinThread(workspaceId, threadId);
-              } else {
-                onPinThread(workspaceId, threadId);
-              }
-            },
-          }),
-        );
-      }
-      items.push(copyItem, archiveItem);
-      const menu = await Menu.new({ items });
-      const window = getCurrentWindow();
-      const position = new LogicalPosition(event.clientX, event.clientY);
-      await menu.popup(position, window);
     },
-    [
-      isThreadPinned,
-      onDeleteThread,
-      onPinThread,
-      onRenameThread,
-      onSyncThread,
-      onUnpinThread,
-    ],
+    [],
   );
+  const closeThreadMenu = useCallback(() => setThreadMenu(null), []);
 
   const showWorkspaceMenu = useCallback(
     async (event: MouseEvent, workspaceId: string) => {
@@ -229,5 +178,12 @@ export function useSidebarMenus({
     [onReloadWorkspaceThreads, onRestartWorkspaceSession, onDeleteWorkspace],
   );
 
-  return { showThreadMenu, showWorkspaceMenu, showWorktreeMenu, showCloneMenu };
+  return {
+    threadMenu,
+    showThreadMenu,
+    closeThreadMenu,
+    showWorkspaceMenu,
+    showWorktreeMenu,
+    showCloneMenu,
+  };
 }

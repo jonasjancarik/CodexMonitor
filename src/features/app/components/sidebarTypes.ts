@@ -46,3 +46,11 @@ export type SidebarOverlayMenuAnchor = {
   left: number;
   width: number;
 };
+
+export type ThreadContextMenuAnchor = {
+  workspaceId: string;
+  threadId: string;
+  canPin: boolean;
+  top: number;
+  left: number;
+};

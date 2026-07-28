@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import type { MouseEvent as ReactMouseEvent } from "react";
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { WorkspaceInfo } from "../../../types";
@@ -43,13 +43,38 @@ vi.mock("../../../services/toasts", () => ({
 }));
 
 describe("useSidebarMenus", () => {
+  it("opens an in-app thread menu without creating a native menu", () => {
+    const { result } = renderHook(() =>
+      useSidebarMenus({
+        onReloadWorkspaceThreads: vi.fn(),
+        onRestartWorkspaceSession: vi.fn(),
+        onDeleteWorkspace: vi.fn(),
+        onDeleteWorktree: vi.fn(),
+      }),
+    );
+    const event = {
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      clientX: 12,
+      clientY: 34,
+    } as unknown as ReactMouseEvent;
+
+    act(() => result.current.showThreadMenu(event, "workspace-1", "thread-1", true));
+
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(event.stopPropagation).toHaveBeenCalledOnce();
+    expect(result.current.threadMenu).toEqual({
+      workspaceId: "workspace-1",
+      threadId: "thread-1",
+      canPin: true,
+      left: 12,
+      top: 34,
+    });
+    expect(menuNew).not.toHaveBeenCalled();
+    expect(menuItemNew).not.toHaveBeenCalled();
+  });
+
   it("adds a show in file manager option for worktrees", async () => {
-    const onDeleteThread = vi.fn();
-    const onSyncThread = vi.fn();
-    const onPinThread = vi.fn();
-    const onUnpinThread = vi.fn();
-    const isThreadPinned = vi.fn(() => false);
-    const onRenameThread = vi.fn();
     const onReloadWorkspaceThreads = vi.fn();
     const onRestartWorkspaceSession = vi.fn();
     const onDeleteWorkspace = vi.fn();
@@ -57,12 +82,6 @@ describe("useSidebarMenus", () => {
 
     const { result } = renderHook(() =>
       useSidebarMenus({
-        onDeleteThread,
-        onSyncThread,
-        onPinThread,
-        onUnpinThread,
-        isThreadPinned,
-        onRenameThread,
         onReloadWorkspaceThreads,
         onRestartWorkspaceSession,
         onDeleteWorkspace,

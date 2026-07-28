@@ -936,6 +936,19 @@
   overflow-y: auto;
 }
 
+.thread-context-menu {
+  position: fixed;
+  isolation: isolate;
+  width: 180px;
+  max-height: calc(100vh - 16px);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  z-index: 9999;
+}
+
 .workspace-add-option {
   border: none;
   background: transparent;
