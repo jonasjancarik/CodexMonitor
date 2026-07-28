@@ -110,6 +110,9 @@ describe("Sidebar", () => {
     expect(menu.className).toContain("thread-context-menu");
     expect(screen.getByRole("menuitem", { name: "Pin" })).toBeTruthy();
 
+    fireEvent.scroll(window);
+    expect(screen.getByRole("menu", { name: "Conversation actions" })).toBeTruthy();
+
     fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
 
     expect(onRenameThread).toHaveBeenCalledWith("ws-1", "thread-1");

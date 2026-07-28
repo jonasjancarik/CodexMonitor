@@ -79,10 +79,8 @@ export const ThreadContextMenu = forwardRef<HTMLDivElement, ThreadContextMenuPro
 
     useEffect(() => {
       window.addEventListener("resize", onClose);
-      window.addEventListener("scroll", onClose, true);
       return () => {
         window.removeEventListener("resize", onClose);
-        window.removeEventListener("scroll", onClose, true);
       };
     }, [onClose]);
 
