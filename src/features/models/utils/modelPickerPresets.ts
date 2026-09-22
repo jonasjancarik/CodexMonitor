@@ -23,7 +23,7 @@ const preset = (
   id: `${family}:${effort}`,
   family,
   effort,
-  label: `GPT-5.6 ${family.charAt(0).toUpperCase()}${family.slice(1)} · ${
+  label: `GPT-${family === "astra" ? "6" : "5.6"} ${family.charAt(0).toUpperCase()}${family.slice(1)} · ${
     effort === "xhigh"
       ? "Extra High"
       : effort.charAt(0).toUpperCase() + effort.slice(1)
@@ -51,9 +51,16 @@ export const MODEL_PICKER_PRESET_CATALOG: readonly ModelPickerPreset[] = [
   preset("terra", "max", 77.4, true),
   preset("sol", "xhigh", 78.7, true),
   preset("sol", "max", 80, false),
+  // Astra has no comparable benchmark scores in the recommendation source.
+  preset("astra", "low", null, false),
+  preset("astra", "medium", null, false),
+  preset("astra", "high", null, false),
+  preset("astra", "xhigh", null, false),
+  preset("astra", "max", null, false),
   preset("luna", "ultra", null, false),
   preset("terra", "ultra", null, false),
   preset("sol", "ultra", null, false),
+  preset("astra", "ultra", null, false),
 ];
 
 export const DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS = [

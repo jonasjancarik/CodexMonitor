@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS,
+  getModelPickerPreset,
+  findModelForPreset,
   normalizeSimplifiedModelPresetIds,
 } from "./modelPickerPresets";
 
@@ -35,4 +37,15 @@ describe("normalizeSimplifiedModelPresetIds", () => {
       ]),
     ).toEqual(["luna:low", "terra:max", "sol:ultra"]);
   });
+});
+
+it("recognizes Astra presets without inventing benchmark recommendations", () => {
+  const preset = getModelPickerPreset("astra:high")!;
+  expect(preset.label).toBe("GPT-6 Astra · High");
+  expect(preset.score).toBeNull();
+  expect(preset.recommended).toBe(false);
+  expect(getModelPickerPreset("astra:none")).toBeNull();
+  expect(normalizeSimplifiedModelPresetIds(["astra:ultra", "astra:high"])).toEqual(["astra:high", "astra:ultra"]);
+  const astra = { id: "provider-astra", model: "gpt-6-astra", displayName: "Astra", description: "", supportedReasoningEfforts: [], defaultReasoningEffort: "medium", isDefault: false };
+  expect(findModelForPreset([astra], preset)).toBe(astra);
 });

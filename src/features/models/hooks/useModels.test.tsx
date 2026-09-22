@@ -86,6 +86,24 @@ describe("useModels", () => {
     expect(result.current.reasoningSupported).toBe(true);
   });
 
+  it.each(["none", "high"])("validates %s when switching to Astra", async (effort) => {
+    vi.mocked(getModelList).mockResolvedValueOnce({ data: [
+      { id: "sol", model: "gpt-5.6-sol", isDefault: true,
+        supportedReasoningEfforts: ["none", "high"].map(reasoningEffort => ({ reasoningEffort })),
+        defaultReasoningEffort: "none" },
+      { id: "astra", model: "gpt-6-astra",
+        supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max", "ultra"].map(reasoningEffort => ({ reasoningEffort })),
+        defaultReasoningEffort: "medium" },
+    ] });
+    vi.mocked(getConfigModel).mockResolvedValueOnce(null);
+    const { result } = renderHook(() => useModels({ activeWorkspace: workspace }));
+    await waitFor(() => expect(result.current.selectedModelId).toBe("sol"));
+    act(() => result.current.setSelectedEffort(effort));
+    act(() => result.current.setSelectedModelId("astra"));
+    await waitFor(() => expect(result.current.selectedEffort).toBe(effort === "none" ? "medium" : "high"));
+    expect(result.current.reasoningOptions).toContain("ultra");
+  });
+
   it("keeps the selected reasoning effort when switching models", async () => {
     vi.mocked(getModelList).mockResolvedValueOnce({
       result: {

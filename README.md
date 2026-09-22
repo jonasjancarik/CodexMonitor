@@ -24,6 +24,7 @@ CodexMonitor is a Tauri app for orchestrating multiple Codex agents across local
 - Use `Shift+Cmd+Enter` (macOS) or `Shift+Ctrl+Enter` (Windows/Linux) to send the opposite follow-up action for a single message.
 - Autocomplete for skills (`$`), prompts (`/prompts:`), reviews (`/review`), and file paths (`@`).
 - Model picker with a capability-ordered simplified slider or the complete model-and-reasoning grid. Settings control the slider options and recommendation highlights; pre-GPT-5.6 models stay tucked under **Older models**, Ultra remains available with its usage warning, and Fast is a compact switch.
+  GPT-6 Astra options can be enabled in Settings for the simplified slider; existing selections are preserved. Astra follows the scored options without a benchmark recommendation. Both pickers use the efforts advertised by Codex, including Ultra when available, and switching models replaces unsupported efforts with the new model's default. Astra Fast availability also follows Codex metadata.
 - Collaboration modes (when enabled), access modes with automatic approval review as the default, and the context usage ring.
 - Dictation with hold-to-talk shortcuts and live waveform (Whisper).
 - Render reasoning/tool/diff items, show automatic approval review decisions, and handle approval or MCP server response prompts.

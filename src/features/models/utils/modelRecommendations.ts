@@ -1,6 +1,6 @@
 import type { ModelOption } from "@/types";
 
-export type RecommendedModelFamily = "luna" | "sol" | "terra";
+export type RecommendedModelFamily = "luna" | "sol" | "terra" | "astra";
 
 export type ModelEffortAlternative = {
   modelFamily: RecommendedModelFamily;
@@ -14,12 +14,14 @@ const RECOMMENDED_EFFORTS: Record<
   luna: new Set(["low", "medium", "high", "xhigh", "max"]),
   sol: new Set(["medium", "xhigh"]),
   terra: new Set(["max"]),
+  astra: new Set(),
 };
 
 const RECOMMENDED_ALTERNATIVES: Record<
   RecommendedModelFamily,
   Readonly<Record<string, ModelEffortAlternative>>
 > = {
+  astra: {},
   luna: {
     none: { modelFamily: "luna", effort: "low" },
     ultra: { modelFamily: "luna", effort: "max" },
@@ -48,6 +50,8 @@ export function getRecommendedModelFamily(
     .join(" ")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ");
+
+  if (/\bgpt 6 astra\b/.test(identity)) return "astra";
 
   if (!/\bgpt 5 6\b/.test(identity)) {
     return null;

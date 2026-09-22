@@ -129,7 +129,8 @@ export function useModels({
         (effort) => effort.reasoningEffort,
       );
       const currentEffort = normalizeEffortValue(selectedEffort);
-      if (preferCurrent && currentEffort) {
+      if (preferCurrent && currentEffort &&
+        (supportedEfforts.length === 0 || supportedEfforts.includes(currentEffort))) {
         return currentEffort;
       }
       if (supportedEfforts.length === 0) {
@@ -139,7 +140,10 @@ export function useModels({
       if (preferred && supportedEfforts.includes(preferred)) {
         return preferred;
       }
-      return normalizeEffortValue(model.defaultReasoningEffort);
+      const defaultEffort = normalizeEffortValue(model.defaultReasoningEffort);
+      return defaultEffort && supportedEfforts.includes(defaultEffort)
+        ? defaultEffort
+        : supportedEfforts[0];
     },
     [preferredEffort, selectedEffort],
   );
@@ -279,10 +283,16 @@ export function useModels({
       return;
     }
     const currentEffort = normalizeEffortValue(selectedEffort);
-    if (currentEffort) {
+    const supported = selectedModel.supportedReasoningEfforts.map(
+      (effort) => effort.reasoningEffort,
+    );
+    if (currentEffort && (supported.length === 0 || supported.includes(currentEffort))) {
       return;
     }
-    const nextEffort = normalizeEffortValue(selectedModel.defaultReasoningEffort);
+    const defaultEffort = normalizeEffortValue(selectedModel.defaultReasoningEffort);
+    const nextEffort = supported.length === 0 || (defaultEffort && supported.includes(defaultEffort))
+      ? defaultEffort
+      : supported[0];
     if (nextEffort === null) {
       return;
     }
