@@ -20,6 +20,7 @@ import {
   resetThreadTurnState,
   shouldClearCompletedPlanForThread,
   shouldIgnoreOrphanSubagentThread,
+  toolStatusForCompletedTurn,
 } from "./threadTurnEventHelpers";
 import type { ThreadAction } from "./useThreadsReducer";
 
@@ -261,12 +262,22 @@ export function useThreadTurnEvents({
   );
 
   const onTurnCompleted = useCallback(
-    (_workspaceId: string, threadId: string, turnId: string) => {
+    (
+      _workspaceId: string,
+      threadId: string,
+      turnId: string,
+      status?: string,
+    ) => {
       const activeTurnId = getLatestKnownActiveTurnId(threadId);
       if (turnId && activeTurnId && turnId !== activeTurnId) {
         return;
       }
       markProcessing(threadId, false);
+      dispatch({
+        type: "finalizeActiveToolItems",
+        threadId,
+        status: toolStatusForCompletedTurn(status),
+      });
       resetThreadTurnState(
         {
           hasOptimisticActiveTurnByThreadRef,
@@ -335,6 +346,7 @@ export function useThreadTurnEvents({
       setThreadLoaded(threadId, false);
       markProcessing(threadId, false);
       markReviewing(threadId, false);
+      dispatch({ type: "finalizeActiveToolItems", threadId, status: "interrupted" });
       resetThreadTurnState(
         {
           hasOptimisticActiveTurnByThreadRef,
@@ -346,6 +358,7 @@ export function useThreadTurnEvents({
       setActiveTurnId(threadId, null);
     },
     [
+      dispatch,
       markProcessing,
       markReviewing,
       pendingInterruptsRef,
@@ -425,6 +438,7 @@ export function useThreadTurnEvents({
       dispatch({ type: "ensureThread", workspaceId, threadId });
       markProcessing(threadId, false);
       markReviewing(threadId, false);
+      dispatch({ type: "finalizeActiveToolItems", threadId, status: "failed" });
       resetThreadTurnState(
         {
           hasOptimisticActiveTurnByThreadRef,

@@ -41,6 +41,42 @@ function parseUserInputs(inputs: Array<Record<string, unknown>>) {
   return { text: textParts.join(" ").trim(), images };
 }
 
+function formatDynamicToolOutput(
+  contentItems: unknown,
+  success: unknown,
+) {
+  const output = Array.isArray(contentItems)
+    ? contentItems
+        .flatMap((entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+            return [];
+          }
+          const content = entry as Record<string, unknown>;
+          const type = asString(content.type);
+          if (type === "inputText") {
+            const text = asString(content.text);
+            return text ? [text] : [];
+          }
+          if (type === "inputImage") {
+            const imageUrl = asString(content.imageUrl);
+            return imageUrl ? ["Image returned"] : [];
+          }
+          if (type === "inputAudio") {
+            const audioUrl = asString(content.audioUrl);
+            return audioUrl ? ["Audio returned"] : [];
+          }
+          return [];
+        })
+        .join("\n\n")
+    : "";
+  if (typeof success !== "boolean") {
+    return output;
+  }
+  return [output, `Success: ${success ? "yes" : "no"}`]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 function autoApprovalReviewStatus(value: unknown) {
   const status = asString(value).trim();
   if (status === "inProgress") {
@@ -261,6 +297,22 @@ export function buildConversationItem(
       detail: args,
       status: asString(item.status ?? ""),
       output: asString(item.result ?? item.error ?? ""),
+    };
+  }
+  if (type === "dynamicToolCall") {
+    const namespace = asString(item.namespace ?? "").trim();
+    const tool = asString(item.tool ?? "").trim();
+    const status = asString(item.status ?? "");
+    const hasArguments = item.arguments !== undefined && item.arguments !== null;
+    return {
+      id,
+      kind: "tool",
+      toolType: type,
+      title: `Tool: ${[namespace, tool].filter(Boolean).join(" / ") || "Tool call"}`,
+      detail: hasArguments ? JSON.stringify(item.arguments, null, 2) : "",
+      status: status === "completed" && item.success === false ? "failed" : status,
+      output: formatDynamicToolOutput(item.contentItems, item.success),
+      durationMs: asNumber(item.durationMs ?? item.duration_ms),
     };
   }
   if (type === "collabToolCall" || type === "collabAgentToolCall") {

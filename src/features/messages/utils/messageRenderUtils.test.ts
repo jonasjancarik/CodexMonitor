@@ -4,7 +4,15 @@ import {
   buildToolSummary,
   formatToolStatusLabel,
   statusToneFromText,
+  toolStatusTone,
 } from "./messageRenderUtils";
+
+it.each(["interrupted", "cancelled", "canceled", "aborted", "declined"])(
+  "does not display %s tools as still running when they have no output",
+  (status) => {
+    expect(toolStatusTone(makeToolItem({ status, output: "" }), false)).toBe("failed");
+  },
+);
 
 function makeToolItem(
   overrides: Partial<Extract<ConversationItem, { kind: "tool" }>>,

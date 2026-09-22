@@ -365,6 +365,14 @@ export function buildToolSummary(
     };
   }
 
+  if (item.toolType === "modelStatus") {
+    return {
+      label: "status",
+      value: item.title,
+      detail: item.detail,
+    };
+  }
+
   if (item.toolType === "hook") {
     return {
       label: "hook",
@@ -440,7 +448,7 @@ export function statusToneFromText(status?: string): StatusTone {
     return "unknown";
   }
   const normalized = status.toLowerCase();
-  if (/(fail|error|denied|stopped|timed[ _-]?out)/.test(normalized)) {
+  if (/(fail|error|denied|declined|stopped|interrupted|cancelled|canceled|aborted|timed[ _-]?out)/.test(normalized)) {
     return "failed";
   }
   if (/(pending|running|processing|started|in[_\s-]?progress)/.test(normalized)) {

@@ -121,6 +121,11 @@ export type ThreadAction =
   | { type: "appendPlanDelta"; threadId: string; itemId: string; delta: string }
   | { type: "appendToolOutput"; threadId: string; itemId: string; delta: string }
   | {
+      type: "finalizeActiveToolItems";
+      threadId: string;
+      status: "completed" | "interrupted" | "failed";
+    }
+  | {
       type: "setThreads";
       workspaceId: string;
       threads: ThreadSummary[];

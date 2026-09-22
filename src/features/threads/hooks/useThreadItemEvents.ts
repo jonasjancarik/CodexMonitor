@@ -1,7 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Dispatch } from "react";
 import { buildConversationItem } from "@utils/threadItems";
-import type { CollabAgentRef } from "@/types";
+import type { CollabAgentRef, ConversationItem } from "@/types";
 import {
   buildItemForDisplay,
   handleConvertedItemEffects,
@@ -11,6 +11,7 @@ import type { ThreadAction } from "./useThreadsReducer";
 type UseThreadItemEventsOptions = {
   activeThreadId: string | null;
   dispatch: Dispatch<ThreadAction>;
+  getItemsForThread: (threadId: string) => ConversationItem[];
   getCustomName: (workspaceId: string, threadId: string) => string | undefined;
   markProcessing: (threadId: string, isProcessing: boolean) => void;
   markReviewing: (threadId: string, isReviewing: boolean) => void;
@@ -40,6 +41,7 @@ type UseThreadItemEventsOptions = {
 export function useThreadItemEvents({
   activeThreadId,
   dispatch,
+  getItemsForThread,
   getCustomName,
   markProcessing,
   markReviewing,
@@ -50,6 +52,32 @@ export function useThreadItemEvents({
   onUserMessageCreated,
   onReviewExited,
 }: UseThreadItemEventsOptions) {
+  const terminalToolItemKeysRef = useRef(new Set<string>());
+
+  const isTerminalToolItem = useCallback(
+    (threadId: string, itemId: string) => {
+      if (terminalToolItemKeysRef.current.has(`${threadId}:${itemId}`)) {
+        return true;
+      }
+      const item = getItemsForThread(threadId).find((entry) => entry.id === itemId);
+      if (item?.kind !== "tool") {
+        return false;
+      }
+      const status = item.status?.trim().toLowerCase().replace(/[\s_-]/g, "") ?? "";
+      return (
+        status === "completed" ||
+        status === "failed" ||
+        status === "declined" ||
+        status === "interrupted" ||
+        status === "canceled" ||
+        status === "cancelled" ||
+        status === "aborted" ||
+        status === "timedout"
+      );
+    },
+    [getItemsForThread],
+  );
+
   const handleItemUpdate = useCallback(
     (
       workspaceId: string,
@@ -58,7 +86,12 @@ export function useThreadItemEvents({
       shouldMarkProcessing: boolean,
     ) => {
       dispatch({ type: "ensureThread", workspaceId, threadId });
-      if (shouldMarkProcessing) {
+      const itemId = typeof item.id === "string" ? item.id : "";
+      const isLateTerminalToolStart =
+        shouldMarkProcessing &&
+        itemId.length > 0 &&
+        isTerminalToolItem(threadId, itemId);
+      if (shouldMarkProcessing && !isLateTerminalToolStart) {
         markProcessing(threadId, true);
       }
       applyCollabThreadLinks(workspaceId, threadId, item);
@@ -82,6 +115,9 @@ export function useThreadItemEvents({
         onUserMessageCreated,
       });
       if (converted) {
+        if (converted.kind === "tool" && !shouldMarkProcessing) {
+          terminalToolItemKeysRef.current.add(`${threadId}:${converted.id}`);
+        }
         dispatch({
           type: "upsertItem",
           workspaceId,
@@ -96,6 +132,7 @@ export function useThreadItemEvents({
       applyCollabThreadLinks,
       dispatch,
       getCustomName,
+      isTerminalToolItem,
       markProcessing,
       markReviewing,
       onReviewExited,
@@ -107,11 +144,13 @@ export function useThreadItemEvents({
 
   const handleToolOutputDelta = useCallback(
     (threadId: string, itemId: string, delta: string) => {
-      markProcessing(threadId, true);
+      if (!isTerminalToolItem(threadId, itemId)) {
+        markProcessing(threadId, true);
+      }
       dispatch({ type: "appendToolOutput", threadId, itemId, delta });
       safeMessageActivity();
     },
-    [dispatch, markProcessing, safeMessageActivity],
+    [dispatch, isTerminalToolItem, markProcessing, safeMessageActivity],
   );
 
   const handleTerminalInteraction = useCallback(

@@ -439,7 +439,7 @@ describe("useThreadTurnEvents", () => {
   });
 
   it("clears pending interrupt and active turn on turn completed", () => {
-    const { result, markProcessing, setActiveTurnId, pendingInterruptsRef } =
+    const { result, dispatch, markProcessing, setActiveTurnId, pendingInterruptsRef } =
       makeOptions({ pendingInterrupts: ["thread-1"] });
 
     act(() => {
@@ -449,6 +449,30 @@ describe("useThreadTurnEvents", () => {
     expect(markProcessing).toHaveBeenCalledWith("thread-1", false);
     expect(setActiveTurnId).toHaveBeenCalledWith("thread-1", null);
     expect(pendingInterruptsRef.current.has("thread-1")).toBe(false);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "finalizeActiveToolItems",
+      threadId: "thread-1",
+      status: "interrupted",
+    });
+  });
+
+  it("uses the terminal turn status to close overlapping active tools", () => {
+    const { result, dispatch } = makeOptions();
+
+    act(() => {
+      result.current.onTurnCompleted(
+        "ws-1",
+        "thread-1",
+        "turn-1",
+        "failed",
+      );
+    });
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "finalizeActiveToolItems",
+      threadId: "thread-1",
+      status: "failed",
+    });
   });
 
   it("ignores turn completed events for stale turns", () => {
@@ -558,6 +582,7 @@ describe("useThreadTurnEvents", () => {
       markReviewing,
       setThreadLoaded,
       setActiveTurnId,
+      dispatch,
       pendingInterruptsRef,
     } = makeOptions({ pendingInterrupts: ["thread-1"] });
 
@@ -569,6 +594,11 @@ describe("useThreadTurnEvents", () => {
     expect(markProcessing).toHaveBeenCalledWith("thread-1", false);
     expect(markReviewing).toHaveBeenCalledWith("thread-1", false);
     expect(setActiveTurnId).toHaveBeenCalledWith("thread-1", null);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "finalizeActiveToolItems",
+      threadId: "thread-1",
+      status: "interrupted",
+    });
     expect(pendingInterruptsRef.current.has("thread-1")).toBe(false);
   });
 
@@ -811,6 +841,11 @@ describe("useThreadTurnEvents", () => {
       type: "ensureThread",
       workspaceId: "ws-1",
       threadId: "thread-1",
+    });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "finalizeActiveToolItems",
+      threadId: "thread-1",
+      status: "failed",
     });
     expect(markProcessing).toHaveBeenCalledWith("thread-1", false);
     expect(markReviewing).toHaveBeenCalledWith("thread-1", false);

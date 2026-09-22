@@ -1,6 +1,35 @@
 import type { ConversationItem } from "../types";
 import { normalizeThreadTimestamp } from "./threadItems.shared";
 
+const TERMINAL_TOOL_STATUSES = new Set([
+  "completed",
+  "failed",
+  "declined",
+  "interrupted",
+  "canceled",
+  "cancelled",
+  "aborted",
+  "timedout",
+]);
+
+function normalizedToolStatus(status: string | undefined) {
+  return status?.trim().toLowerCase().replace(/[ _-]/g, "") ?? "";
+}
+
+function isTerminalToolStatus(status: string | undefined) {
+  return TERMINAL_TOOL_STATUSES.has(normalizedToolStatus(status));
+}
+
+function isLateActiveToolUpdate(
+  existing: Extract<ConversationItem, { kind: "tool" }>,
+  incoming: Extract<ConversationItem, { kind: "tool" }>,
+) {
+  return (
+    isTerminalToolStatus(existing.status) &&
+    normalizedToolStatus(incoming.status) === "inprogress"
+  );
+}
+
 function mergeUserInputQuestions(
   existing: Extract<ConversationItem, { kind: "userInput" }>["questions"],
   incoming: Extract<ConversationItem, { kind: "userInput" }>["questions"],
@@ -80,6 +109,7 @@ export function upsertItem(list: ConversationItem[], item: ConversationItem) {
   }
 
   if (existing.kind === "tool" && item.kind === "tool") {
+    const isLateActiveUpdate = isLateActiveToolUpdate(existing, item);
     const existingOutput = existing.output ?? "";
     const incomingOutput = item.output ?? "";
     const hasIncomingOutput = incomingOutput.trim().length > 0;
@@ -89,9 +119,21 @@ export function upsertItem(list: ConversationItem[], item: ConversationItem) {
       ...item,
       title: item.title?.trim() ? item.title : existing.title,
       detail: item.detail?.trim() ? item.detail : existing.detail,
-      status: item.status?.trim() ? item.status : existing.status,
-      output: hasIncomingOutput ? incomingOutput : existingOutput,
-      changes: hasIncomingChanges ? item.changes : existing.changes,
+      status: isLateActiveUpdate
+        ? existing.status
+        : item.status?.trim()
+          ? item.status
+          : existing.status,
+      output: isLateActiveUpdate
+        ? existingOutput || (hasIncomingOutput ? incomingOutput : existingOutput)
+        : hasIncomingOutput
+          ? incomingOutput
+          : existingOutput,
+      changes: isLateActiveUpdate
+        ? existing.changes ?? (hasIncomingChanges ? item.changes : existing.changes)
+        : hasIncomingChanges
+          ? item.changes
+          : existing.changes,
       durationMs:
         typeof item.durationMs === "number" ? item.durationMs : existing.durationMs,
     };
@@ -172,15 +214,26 @@ function chooseRicherItem(remote: ConversationItem, local: ConversationItem) {
     return localLength > remoteLength ? local : remote;
   }
   if (remote.kind === "tool" && local.kind === "tool") {
+    const isLateActiveUpdate = isLateActiveToolUpdate(local, remote);
     const remoteOutput = remote.output ?? "";
     const localOutput = local.output ?? "";
     const hasRemoteOutput = remoteOutput.trim().length > 0;
     const remoteStatus = remote.status?.trim();
     return {
       ...remote,
-      status: remoteStatus ? remote.status : local.status,
-      output: hasRemoteOutput ? remoteOutput : localOutput,
-      changes: remote.changes ?? local.changes,
+      status: isLateActiveUpdate
+        ? local.status
+        : remoteStatus
+          ? remote.status
+          : local.status,
+      output: isLateActiveUpdate
+        ? localOutput || (hasRemoteOutput ? remoteOutput : localOutput)
+        : hasRemoteOutput
+          ? remoteOutput
+          : localOutput,
+      changes: isLateActiveUpdate
+        ? local.changes ?? remote.changes
+        : remote.changes ?? local.changes,
       collabSender: remote.collabSender ?? local.collabSender,
       collabReceiver: remote.collabReceiver ?? local.collabReceiver,
       collabReceivers:

@@ -54,6 +54,19 @@ describe("Messages", () => {
     exportMarkdownFileMock.mockReset();
   });
 
+  it("renders model notices as status rows with readable details", () => {
+    render(<Messages
+      items={[{ id: "notice", kind: "tool", toolType: "modelStatus",
+        title: "Model changed for this response",
+        detail: "Codex switched from gpt-6-astra to other-model.", status: "completed" }]}
+      threadId="thread-1" workspaceId="ws-1" isThinking={false}
+      openTargets={[]} selectedOpenAppId=""
+    />);
+    expect(screen.getByText("Model changed for this response")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /status:\s*Model changed for this response/ }));
+    expect(screen.getByText("Codex switched from gpt-6-astra to other-model.")).toBeTruthy();
+  });
+
   it("renders image grid above message text and opens lightbox", () => {
     const items: ConversationItem[] = [
       {

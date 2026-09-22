@@ -2,6 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildConversationItem } from "@utils/threadItems";
+import type { ConversationItem } from "@/types";
 import { useThreadItemEvents } from "./useThreadItemEvents";
 
 vi.mock("@utils/threadItems", () => ({
@@ -15,6 +16,7 @@ type SetupOverrides = {
   getCustomName?: (workspaceId: string, threadId: string) => string | undefined;
   onUserMessageCreated?: (workspaceId: string, threadId: string, text: string) => void;
   onReviewExited?: (workspaceId: string, threadId: string) => void;
+  getItemsForThread?: (threadId: string) => ConversationItem[];
 };
 
 const makeOptions = (overrides: SetupOverrides = {}) => {
@@ -26,11 +28,13 @@ const makeOptions = (overrides: SetupOverrides = {}) => {
   const applyCollabThreadLinks = vi.fn();
   const getCustomName =
     overrides.getCustomName ?? vi.fn(() => undefined);
+  const getItemsForThread = overrides.getItemsForThread ?? vi.fn(() => []);
 
   const { result } = renderHook(() =>
     useThreadItemEvents({
       activeThreadId: overrides.activeThreadId ?? null,
       dispatch,
+      getItemsForThread,
       getCustomName,
       markProcessing,
       markReviewing,
@@ -51,6 +55,7 @@ const makeOptions = (overrides: SetupOverrides = {}) => {
     recordThreadActivity,
     applyCollabThreadLinks,
     getCustomName,
+    getItemsForThread,
   };
 };
 
@@ -189,6 +194,93 @@ describe("useThreadItemEvents", () => {
         status: "completed",
       }),
     );
+  });
+
+  it("keeps late output without marking a completed tool as processing again", () => {
+    vi.mocked(buildConversationItem).mockReturnValue({
+      id: "command-1",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: npm test",
+      detail: "/workspace",
+      status: "completed",
+      output: "Tests passed",
+    });
+    const { result, dispatch, markProcessing } = makeOptions();
+
+    act(() => {
+      result.current.onItemCompleted("ws-1", "thread-1", {
+        type: "commandExecution",
+        id: "command-1",
+        status: "completed",
+      });
+      result.current.onCommandOutputDelta(
+        "ws-1",
+        "thread-1",
+        "command-1",
+        "late output",
+      );
+    });
+
+    expect(markProcessing).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "appendToolOutput",
+      threadId: "thread-1",
+      itemId: "command-1",
+      delta: "late output",
+    });
+  });
+
+  it("keeps output from a canceled tool without reviving processing", () => {
+    const interruptedTool: ConversationItem = {
+      id: "command-canceled",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: long-running-task",
+      detail: "/workspace",
+      status: "interrupted",
+    };
+    const { result, dispatch, markProcessing } = makeOptions({
+      getItemsForThread: () => [interruptedTool],
+    });
+
+    act(() => {
+      result.current.onCommandOutputDelta(
+        "ws-1",
+        "thread-1",
+        "command-canceled",
+        "late output",
+      );
+    });
+
+    expect(markProcessing).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "appendToolOutput",
+      threadId: "thread-1",
+      itemId: "command-canceled",
+      delta: "late output",
+    });
+  });
+
+  it("does not revive processing for a late item started event", () => {
+    vi.mocked(buildConversationItem).mockReturnValue({
+      id: "tool-1",
+      kind: "tool",
+      toolType: "mcpToolCall",
+      title: "Tool: server / action",
+      detail: "",
+      status: "completed",
+      output: "Done",
+    });
+    const { result, markProcessing } = makeOptions();
+    const item: ItemPayload = { type: "mcpToolCall", id: "tool-1" };
+
+    act(() => {
+      result.current.onItemCompleted("ws-1", "thread-1", item);
+      result.current.onItemStarted("ws-1", "thread-1", item);
+    });
+
+    expect(markProcessing).not.toHaveBeenCalled();
   });
 
   it("notifies when a user message is created", () => {

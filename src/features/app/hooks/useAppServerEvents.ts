@@ -1,7 +1,9 @@
+import { buildModelStatusNotice } from "../../../utils/appServerModelEvents";
 import { useEffect, useRef } from "react";
 import type {
   AppServerEvent,
   ApprovalRequest,
+  ConversationItem,
   RequestUserInputRequest,
 } from "../../../types";
 import { subscribeAppServerEvents } from "../../../services/events";
@@ -38,6 +40,7 @@ type HookEvent = {
 };
 
 type AppServerEventHandlers = {
+  onModelStatus?: (workspaceId: string, threadId: string, item: ConversationItem) => void;
   onWorkspaceConnected?: (workspaceId: string) => void;
   onThreadStarted?: (workspaceId: string, thread: Record<string, unknown>) => void;
   onThreadNameUpdated?: (
@@ -63,7 +66,7 @@ type AppServerEventHandlers = {
   onAgentMessageCompleted?: (event: AgentCompleted) => void;
   onAppServerEvent?: (event: AppServerEvent) => void;
   onTurnStarted?: (workspaceId: string, threadId: string, turnId: string) => void;
-  onTurnCompleted?: (workspaceId: string, threadId: string, turnId: string) => void;
+  onTurnCompleted?: (workspaceId: string, threadId: string, turnId: string, status?: string) => void;
   onTurnError?: (
     workspaceId: string,
     threadId: string,
@@ -132,6 +135,9 @@ export const METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS = [
   "item/started",
   "item/tool/requestUserInput",
   "mcpServer/elicitation/request",
+  "model/rerouted",
+  "model/safetyBuffering/updated",
+  "model/verification",
   "thread/archived",
   "thread/closed",
   "thread/name/updated",
@@ -214,6 +220,14 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (!isSupportedAppServerMethod(method)) {
+        return;
+      }
+
+      if (method.startsWith("model/")) {
+        const notice = buildModelStatusNotice(method, params);
+        if (notice) {
+          currentHandlers.onModelStatus?.(workspace_id, notice.threadId, notice.item);
+        }
         return;
       }
 
@@ -415,7 +429,10 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         );
         const turnId = String(turn?.id ?? params.turnId ?? params.turn_id ?? "");
         if (threadId) {
-          currentHandlers.onTurnCompleted?.(workspace_id, threadId, turnId);
+          currentHandlers.onTurnCompleted?.(
+            workspace_id, threadId, turnId,
+            typeof turn?.status === "string" ? turn.status : undefined,
+          );
         }
         return;
       }

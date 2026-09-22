@@ -14,6 +14,16 @@ import {
   prefersUpdatedSort,
 } from "./common";
 
+function isActiveToolStatus(status: string | undefined) {
+  const normalized = status?.trim().toLowerCase().replace(/[\s_-]/g, "") ?? "";
+  return (
+    normalized === "inprogress" ||
+    normalized === "running" ||
+    normalized === "pending" ||
+    normalized === "started"
+  );
+}
+
 export function reduceThreadItems(state: ThreadState, action: ThreadAction): ThreadState {
   switch (action.type) {
     case "addAssistantMessage": {
@@ -324,6 +334,32 @@ export function reduceThreadItems(state: ThreadState, action: ThreadAction): Thr
         itemsByThread: {
           ...state.itemsByThread,
           [action.threadId]: prepareThreadItems(next, { maxItemsPerThread: state.maxItemsPerThread }),
+        },
+      };
+    }
+    case "finalizeActiveToolItems": {
+      const list = state.itemsByThread[action.threadId];
+      if (!list?.length) {
+        return state;
+      }
+      let didFinalize = false;
+      const next = list.map((item) => {
+        if (item.kind !== "tool" || !isActiveToolStatus(item.status)) {
+          return item;
+        }
+        didFinalize = true;
+        return { ...item, status: action.status };
+      });
+      if (!didFinalize) {
+        return state;
+      }
+      return {
+        ...state,
+        itemsByThread: {
+          ...state.itemsByThread,
+          [action.threadId]: prepareThreadItems(next, {
+            maxItemsPerThread: state.maxItemsPerThread,
+          }),
         },
       };
     }

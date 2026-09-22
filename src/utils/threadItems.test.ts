@@ -611,6 +611,66 @@ describe("threadItems", () => {
     }
   });
 
+  it("keeps a completed tool terminal when a late started snapshot arrives", () => {
+    const completed: ConversationItem = {
+      id: "tool-completed",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: npm test",
+      detail: "/workspace",
+      status: "completed",
+      output: "Tests passed",
+      durationMs: 800,
+    };
+    const lateStarted: ConversationItem = {
+      id: "tool-completed",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: npm test",
+      detail: "/workspace",
+      status: "inProgress",
+      output: "partial output",
+    };
+
+    const next = upsertItem([completed], lateStarted);
+
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({
+      status: "completed",
+      output: "Tests passed",
+      durationMs: 800,
+    });
+  });
+
+  it("keeps an interrupted tool result when a stale active refresh arrives", () => {
+    const local: ConversationItem = {
+      id: "tool-interrupted",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: long-running-task",
+      detail: "/workspace",
+      status: "interrupted",
+      output: "Stopped by user",
+    };
+    const staleRemote: ConversationItem = {
+      id: "tool-interrupted",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: long-running-task",
+      detail: "/workspace",
+      status: "inProgress",
+      output: "still running",
+    };
+
+    const merged = mergeThreadItems([staleRemote], [local]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      status: "interrupted",
+      output: "Stopped by user",
+    });
+  });
+
   it("preserves streamed reasoning content when completion item is empty", () => {
     const existing: ConversationItem = {
       id: "reasoning-1",
@@ -782,6 +842,73 @@ describe("threadItems", () => {
       expect(item.text).toBe("Please $Review");
       expect(item.images).toEqual(["https://example.com/image.png"]);
     }
+  });
+
+  it("formats dynamic tool calls from started and completed lifecycle payloads", () => {
+    const started = buildConversationItem({
+      type: "dynamicToolCall",
+      id: "dynamic-1",
+      namespace: "calendar",
+      tool: "create_event",
+      arguments: { title: "Planning" },
+      status: "inProgress",
+      success: null,
+      contentItems: null,
+    });
+    const completed = buildConversationItem({
+      type: "dynamicToolCall",
+      id: "dynamic-1",
+      namespace: "calendar",
+      tool: "create_event",
+      arguments: { title: "Planning" },
+      status: "completed",
+      success: true,
+      durationMs: 240,
+      contentItems: [
+        { type: "inputText", text: "Created event" },
+        { type: "inputImage", imageUrl: "https://example.com/event.png" },
+        { type: "inputAudio", audioUrl: "https://example.com/confirmation.mp3" },
+      ],
+    });
+
+    expect(started).toMatchObject({
+      id: "dynamic-1",
+      kind: "tool",
+      toolType: "dynamicToolCall",
+      title: "Tool: calendar / create_event",
+      detail: '{\n  "title": "Planning"\n}',
+      status: "inProgress",
+      output: "",
+      durationMs: null,
+    });
+    expect(completed).toMatchObject({
+      id: "dynamic-1",
+      kind: "tool",
+      toolType: "dynamicToolCall",
+      title: "Tool: calendar / create_event",
+      status: "completed",
+      durationMs: 240,
+    });
+    expect(completed?.kind === "tool" && completed.output).toBe(
+      "Created event\n\nImage returned\n\nAudio returned\n\nSuccess: yes",
+    );
+  });
+
+  it("retains a dynamic tool failure result", () => {
+    const item = buildConversationItem({
+      type: "dynamicToolCall",
+      id: "dynamic-failed",
+      tool: "send",
+      arguments: {},
+      status: "completed",
+      success: false,
+      contentItems: [{ type: "inputText", text: "Permission denied" }],
+    });
+
+    expect(item).toMatchObject({
+      status: "failed",
+      output: "Permission denied\n\nSuccess: no",
+    });
   });
 
   it("keeps image-only user messages without placeholder text", () => {

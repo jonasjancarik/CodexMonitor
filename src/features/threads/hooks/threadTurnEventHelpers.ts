@@ -76,6 +76,25 @@ export function shouldClearCompletedPlanForThread(
   return plan.steps.every((step) => step.status === "completed");
 }
 
+export function toolStatusForCompletedTurn(status: string | undefined) {
+  const normalized = status?.trim().toLowerCase().replace(/[\s_-]/g, "") ?? "";
+  if (normalized === "failed") {
+    return "failed" as const;
+  }
+  if (
+    normalized === "interrupted" ||
+    normalized === "canceled" ||
+    normalized === "cancelled" ||
+    normalized === "aborted"
+  ) {
+    return "interrupted" as const;
+  }
+  // A completed turn without this item's terminal lifecycle event cannot prove
+  // that the tool itself succeeded. A late item/completed event may replace
+  // this provisional state with its authoritative result.
+  return "interrupted" as const;
+}
+
 export function resetThreadTurnState(
   refs: {
     hasOptimisticActiveTurnByThreadRef: { current: Record<string, boolean> };

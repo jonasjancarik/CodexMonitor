@@ -8,6 +8,7 @@ import Diff from "lucide-react/dist/esm/icons/diff";
 import FileDiffIcon from "lucide-react/dist/esm/icons/file-diff";
 import FileText from "lucide-react/dist/esm/icons/file-text";
 import Image from "lucide-react/dist/esm/icons/image";
+import Info from "lucide-react/dist/esm/icons/info";
 import Quote from "lucide-react/dist/esm/icons/quote";
 import Search from "lucide-react/dist/esm/icons/search";
 import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
@@ -253,6 +254,9 @@ function toolIconForSummary(
   item: Extract<ConversationItem, { kind: "tool" }>,
   summary: ToolSummary,
 ) {
+  if (item.toolType === "modelStatus") {
+    return Info;
+  }
   if (item.toolType === "commandExecution") {
     return Terminal;
   }

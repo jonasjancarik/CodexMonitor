@@ -1,3 +1,4 @@
+import { useThreadModelEvents } from "./useThreadModelEvents";
 import { useCallback, useMemo } from "react";
 import type { Dispatch, MutableRefObject } from "react";
 import type {
@@ -82,6 +83,7 @@ export function useThreadEventHandlers({
   approvalAllowlistRef,
   pendingInterruptsRef,
 }: ThreadEventHandlersOptions) {
+  const onModelStatus = useThreadModelEvents({ dispatch, isThreadHidden, getCustomName });
   const onApprovalRequest = useThreadApprovalEvents({
     dispatch,
     approvalAllowlistRef,
@@ -142,6 +144,7 @@ export function useThreadEventHandlers({
     onFileChangeOutputDelta,
   } = useThreadItemEvents({
     activeThreadId,
+    getItemsForThread,
     dispatch,
     getCustomName,
     markProcessing,
@@ -212,6 +215,7 @@ export function useThreadEventHandlers({
 
   const handlers = useMemo(
     () => ({
+      onModelStatus,
       onWorkspaceConnected,
       onApprovalRequest,
       onRequestUserInput,
@@ -245,6 +249,7 @@ export function useThreadEventHandlers({
       onTurnError,
     }),
     [
+      onModelStatus,
       onWorkspaceConnected,
       onApprovalRequest,
       onRequestUserInput,

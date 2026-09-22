@@ -482,6 +482,52 @@ describe("threadReducer", () => {
     expect(next).toBe(base);
   });
 
+  it("finalizes every active tool in a canceled turn without changing completed tools", () => {
+    const activeCommand: ConversationItem = {
+      id: "command-1",
+      kind: "tool",
+      toolType: "commandExecution",
+      title: "Command: long-running-task",
+      detail: "/workspace",
+      status: "inProgress",
+    };
+    const activePlan: ConversationItem = {
+      id: "plan-1",
+      kind: "tool",
+      toolType: "plan",
+      title: "Plan",
+      detail: "Generating plan...",
+      status: "in_progress",
+    };
+    const completedSearch: ConversationItem = {
+      id: "search-1",
+      kind: "tool",
+      toolType: "webSearch",
+      title: "Web search",
+      detail: "Codex",
+      status: "completed",
+    };
+    const next = threadReducer(
+      {
+        ...initialState,
+        itemsByThread: {
+          "thread-1": [activeCommand, activePlan, completedSearch],
+        },
+      },
+      {
+        type: "finalizeActiveToolItems",
+        threadId: "thread-1",
+        status: "interrupted",
+      },
+    );
+
+    expect(
+      next.itemsByThread["thread-1"]?.map((item) =>
+        item.kind === "tool" ? item.status : undefined,
+      ),
+    ).toEqual(["interrupted", "interrupted", "completed"]);
+  });
+
   it("adds and removes user input requests by workspace and id", () => {
     const requestA = {
       workspace_id: "ws-1",

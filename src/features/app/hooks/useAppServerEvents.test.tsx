@@ -489,6 +489,44 @@ describe("useAppServerEvents", () => {
     });
   });
 
+  it.each(["completed", "interrupted", "failed"])("forwards terminal turn status %s", async (status) => {
+    const handlers: Handlers = { onTurnCompleted: vi.fn() };
+    const { root } = await mount(handlers);
+    act(() => listener?.({ workspace_id: "ws", message: {
+      method: "turn/completed", params: { threadId: "t", turn: { id: "turn", status } },
+    } }));
+    expect(handlers.onTurnCompleted).toHaveBeenCalledWith("ws", "t", "turn", status);
+    await act(async () => root.unmount());
+  });
+
+  it("routes model notices without treating them as tool lifecycle events", async () => {
+    const handlers: Handlers = {
+      onModelStatus: vi.fn(), onItemStarted: vi.fn(), onItemCompleted: vi.fn(),
+    };
+    const { root } = await mount(handlers);
+    act(() => {
+      for (const [method, extra] of [
+        ["model/rerouted", { fromModel: "astra", toModel: "other" }],
+        ["model/safetyBuffering/updated", { model: "astra", showBufferingUi: true }],
+        ["model/verification", { verifications: ["trustedAccessForCyber"] }],
+      ] as const) {
+        listener?.({ workspace_id: "ws-1", message: {
+          method, params: { threadId: "t", turnId: "turn", ...extra },
+        } });
+      }
+      listener?.({ workspace_id: "ws-1", message: {
+        method: "model/rerouted", params: { threadId: "t" },
+      } });
+    });
+    expect(handlers.onModelStatus).toHaveBeenCalledTimes(3);
+    expect(handlers.onModelStatus).toHaveBeenLastCalledWith("ws-1", "t", expect.objectContaining({
+      toolType: "modelStatus", title: "Model verification notice",
+    }));
+    expect(handlers.onItemStarted).not.toHaveBeenCalled();
+    expect(handlers.onItemCompleted).not.toHaveBeenCalled();
+    await act(async () => root.unmount());
+  });
+
   it("routes automatic approval reviews through item lifecycle handlers", async () => {
     const handlers: Handlers = {
       onItemStarted: vi.fn(),
