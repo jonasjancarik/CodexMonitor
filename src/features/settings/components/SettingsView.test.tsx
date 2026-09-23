@@ -119,6 +119,8 @@ const baseSettings: AppSettings = {
     "sol:medium",
     "terra:max",
     "sol:xhigh",
+    "gpt-6-luna:medium",
+    "gpt-6-sol:medium",
     "sol:ultra",
   ],
   uiScale: 1,

@@ -1191,6 +1191,8 @@ fn default_composer_simplified_model_presets() -> Vec<String> {
         "sol:medium",
         "terra:max",
         "sol:xhigh",
+        "gpt-6-luna:medium",
+        "gpt-6-sol:medium",
         "sol:ultra",
     ]
     .into_iter()

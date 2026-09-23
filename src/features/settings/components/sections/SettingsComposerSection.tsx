@@ -112,8 +112,8 @@ export function SettingsComposerSection({
             <div className="settings-field-label">Simplified options</div>
             <div className="settings-help">
               Select the model and effort combinations shown on the slider. They
-              keep a fixed order, with Astra after the scored options and Ultra
-              last. Only efforts supported by your Codex version appear in the slider.
+              keep a fixed order, with GPT-6 models after the scored options and
+              Ultra last. Only efforts supported by your Codex version appear in the slider.
             </div>
           </div>
           <button

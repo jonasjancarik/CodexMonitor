@@ -7,7 +7,7 @@ import {
 
 export type ModelPickerPreset = {
   id: string;
-  family: RecommendedModelFamily;
+  family: RecommendedModelFamily | "gpt-6-luna" | "gpt-6-sol";
   effort: string;
   label: string;
   score: number | null;
@@ -15,7 +15,7 @@ export type ModelPickerPreset = {
 };
 
 const preset = (
-  family: RecommendedModelFamily,
+  family: ModelPickerPreset["family"],
   effort: string,
   score: number | null,
   recommended: boolean,
@@ -23,7 +23,9 @@ const preset = (
   id: `${family}:${effort}`,
   family,
   effort,
-  label: `GPT-${family === "astra" ? "6" : "5.6"} ${family.charAt(0).toUpperCase()}${family.slice(1)} · ${
+  label: `GPT-${family.startsWith("gpt-6-") || family === "astra" ? "6" : "5.6"} ${
+    (family.startsWith("gpt-6-") ? family.slice(6) : family).replace(/^./, (letter) => letter.toUpperCase())
+  } · ${
     effort === "xhigh"
       ? "Extra High"
       : effort.charAt(0).toUpperCase() + effort.slice(1)
@@ -51,6 +53,13 @@ export const MODEL_PICKER_PRESET_CATALOG: readonly ModelPickerPreset[] = [
   preset("terra", "max", 77.4, true),
   preset("sol", "xhigh", 78.7, true),
   preset("sol", "max", 80, false),
+  // GPT-6 models have no comparable scores in the recommendation source.
+  ...["none", "low", "medium", "high", "xhigh", "max"].map((effort) =>
+    preset("gpt-6-luna", effort, null, false),
+  ),
+  ...["none", "low", "medium", "high", "xhigh", "max"].map((effort) =>
+    preset("gpt-6-sol", effort, null, false),
+  ),
   // Astra has no comparable benchmark scores in the recommendation source.
   preset("astra", "low", null, false),
   preset("astra", "medium", null, false),
@@ -60,6 +69,8 @@ export const MODEL_PICKER_PRESET_CATALOG: readonly ModelPickerPreset[] = [
   preset("luna", "ultra", null, false),
   preset("terra", "ultra", null, false),
   preset("sol", "ultra", null, false),
+  preset("gpt-6-luna", "ultra", null, false),
+  preset("gpt-6-sol", "ultra", null, false),
   preset("astra", "ultra", null, false),
 ];
 
@@ -72,6 +83,8 @@ export const DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS = [
   "sol:medium",
   "terra:max",
   "sol:xhigh",
+  "gpt-6-luna:medium",
+  "gpt-6-sol:medium",
   "sol:ultra",
 ] as const;
 
@@ -108,7 +121,11 @@ export function findModelForPreset(
   preset: ModelPickerPreset,
 ): ModelOption | null {
   return (
-    models.find((model) => getRecommendedModelFamily(model) === preset.family) ??
+    models.find((model) =>
+      preset.family.startsWith("gpt-6-")
+        ? model.model.toLowerCase() === preset.family
+        : getRecommendedModelFamily(model) === preset.family,
+    ) ??
     null
   );
 }
