@@ -241,7 +241,7 @@
   background: var(--surface-card-strong);
 }
 
-.workspace-home-model-picker-popover {
+.composer-model-settings-popover.workspace-home-model-picker-popover {
   position: fixed;
   bottom: auto;
 }
