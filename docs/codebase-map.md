@@ -72,6 +72,7 @@ Use TS/Vite aliases for refactor-safe imports:
 
 - Workspace state and lifecycle: `src/features/workspaces/hooks/useWorkspaces.ts`
 - Workspace home behavior: `src/features/workspaces/hooks/useWorkspaceHome.ts`
+- Workspace home model picker and viewport placement: `src/features/workspaces/components/WorkspaceHomeRunControls.tsx`, `src/styles/workspace-home.css`
 - Workspace file list and reads in app layer: `src/features/app/hooks/useWorkspaceFileListing.ts`, `src/features/workspaces/hooks/useWorkspaceFiles.ts`
 
 ### Settings

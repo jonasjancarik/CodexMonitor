@@ -242,7 +242,8 @@
 }
 
 .workspace-home-model-picker-popover {
-  left: 0;
+  position: fixed;
+  bottom: auto;
 }
 
 .workspace-home-dropdown {

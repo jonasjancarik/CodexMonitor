@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import type { ModelOption, WorkspaceInfo } from "../../../types";
 import type { WorkspaceRunMode } from "../hooks/useWorkspaceHome";
 import Laptop from "lucide-react/dist/esm/icons/laptop";
@@ -62,6 +62,7 @@ export function WorkspaceHomeRunControls({
 }: WorkspaceHomeRunControlsProps) {
   const runModeMenu = useMenuController();
   const modelsMenu = useMenuController();
+  const modelPopoverRef = useRef<HTMLDivElement>(null);
   const {
     isOpen: runModeOpen,
     containerRef: runModeRef,
@@ -94,6 +95,40 @@ export function WorkspaceHomeRunControls({
     toggleModelsOpen();
     closeRunMode();
   }, [closeRunMode, toggleModelsOpen]);
+
+  useLayoutEffect(() => {
+    if (!modelsOpen || runMode !== "local") return;
+
+    const placePopover = () => {
+      const trigger = modelsRef.current?.querySelector("button");
+      const popover = modelPopoverRef.current;
+      if (!trigger || !popover) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const gap = 8;
+      const margin = 12;
+      const spaceAbove = triggerRect.top - gap - margin;
+      const spaceBelow = window.innerHeight - triggerRect.bottom - gap - margin;
+      const opensAbove = spaceAbove >= spaceBelow;
+      popover.style.maxHeight = `${Math.max(0, opensAbove ? spaceAbove : spaceBelow)}px`;
+
+      const width = popover.getBoundingClientRect().width;
+      popover.style.left = `${Math.max(margin, Math.min(triggerRect.left, window.innerWidth - width - margin))}px`;
+      popover.style.top = `${opensAbove ? triggerRect.top - gap - popover.getBoundingClientRect().height : triggerRect.bottom + gap}px`;
+    };
+
+    placePopover();
+    window.addEventListener("resize", placePopover);
+    window.addEventListener("scroll", placePopover, true);
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(placePopover);
+    if (modelPopoverRef.current) observer?.observe(modelPopoverRef.current);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", placePopover);
+      window.removeEventListener("scroll", placePopover, true);
+    };
+  }, [modelsOpen, modelsRef, runMode]);
 
   return (
     <div className="workspace-home-controls">
@@ -178,6 +213,7 @@ export function WorkspaceHomeRunControls({
           </MenuTrigger>
           {modelsOpen && (
             <PopoverSurface
+              ref={modelPopoverRef}
               className="composer-model-settings-popover workspace-home-model-picker-popover"
               role="dialog"
               aria-label="Choose model and reasoning"

@@ -57,7 +57,10 @@ function renderControls(runMode: "local" | "worktree") {
 }
 
 describe("WorkspaceHomeRunControls", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it("uses the combined model and reasoning grid for local runs", () => {
     const { onSelectEffort, onSelectModel } = renderControls("local");
@@ -71,6 +74,27 @@ describe("WorkspaceHomeRunControls", () => {
 
     expect(onSelectModel).toHaveBeenCalledWith("gpt-5.5");
     expect(onSelectEffort).toHaveBeenCalledWith("xhigh");
+  });
+
+  it("keeps the local model picker inside the viewport", () => {
+    const rect = (left: number, top: number, width: number, height: number) =>
+      ({ left, top, width, height, right: left + width, bottom: top + height }) as DOMRect;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: HTMLElement) {
+        if (this.classList.contains("workspace-home-model-picker-trigger")) {
+          return rect(400, 570, 260, 31);
+        }
+        return rect(0, 0, 540, 500);
+      },
+    );
+    renderControls("local");
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+
+    const popover = screen.getByRole("dialog", { name: "Choose model and reasoning" });
+    expect(popover.style.top).toBe("62px");
+    expect(popover.style.left).toBe("400px");
+    expect(popover.style.maxHeight).toBe("550px");
   });
 
   it("keeps the multi-model controls for worktree runs", () => {
