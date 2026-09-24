@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { MutableRefObject } from "react";
+import type { MutableRefObject, RefObject } from "react";
 
 import { useDismissibleMenu } from "./useDismissibleMenu";
 
@@ -11,6 +11,7 @@ type UseMenuControllerOptions = {
   onOpenChange?: (open: boolean) => void;
   onDismiss?: () => void;
   closeOnEscape?: boolean;
+  additionalInsideRef?: RefObject<HTMLElement | null>;
 };
 
 type MenuController = {
@@ -32,6 +33,7 @@ export function useMenuController({
   onOpenChange,
   onDismiss,
   closeOnEscape = true,
+  additionalInsideRef,
 }: UseMenuControllerOptions = {}): MenuController {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const isControlled = controlledOpen !== undefined;
@@ -71,6 +73,7 @@ export function useMenuController({
   useDismissibleMenu({
     isOpen,
     containerRef,
+    additionalInsideRef,
     onClose: dismiss,
     closeOnEscape,
   });

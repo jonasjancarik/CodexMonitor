@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { ModelOption, WorkspaceInfo } from "../../../types";
 import type { WorkspaceRunMode } from "../hooks/useWorkspaceHome";
 import Laptop from "lucide-react/dist/esm/icons/laptop";
@@ -61,8 +62,8 @@ export function WorkspaceHomeRunControls({
   isSubmitting,
 }: WorkspaceHomeRunControlsProps) {
   const runModeMenu = useMenuController();
-  const modelsMenu = useMenuController();
   const modelPopoverRef = useRef<HTMLDivElement>(null);
+  const modelsMenu = useMenuController({ additionalInsideRef: modelPopoverRef });
   const {
     isOpen: runModeOpen,
     containerRef: runModeRef,
@@ -211,7 +212,7 @@ export function WorkspaceHomeRunControls({
             </span>
             <ChevronDown size={13} strokeWidth={1.8} aria-hidden />
           </MenuTrigger>
-          {modelsOpen && (
+          {modelsOpen && createPortal(
             <PopoverSurface
               ref={modelPopoverRef}
               className="composer-model-settings-popover workspace-home-model-picker-popover"
@@ -230,7 +231,8 @@ export function WorkspaceHomeRunControls({
                   closeModels();
                 }}
               />
-            </PopoverSurface>
+            </PopoverSurface>,
+            modelsRef.current?.closest(".app") ?? document.body,
           )}
         </div>
       ) : (

@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 type UseDismissibleMenuOptions = {
   isOpen: boolean;
   containerRef: RefObject<HTMLElement | null>;
+  additionalInsideRef?: RefObject<HTMLElement | null>;
   onClose: () => void;
   closeOnEscape?: boolean;
 };
@@ -11,6 +12,7 @@ type UseDismissibleMenuOptions = {
 export function useDismissibleMenu({
   isOpen,
   containerRef,
+  additionalInsideRef,
   onClose,
   closeOnEscape = true,
 }: UseDismissibleMenuOptions) {
@@ -21,7 +23,10 @@ export function useDismissibleMenu({
 
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node | null;
-      if (target && containerRef.current?.contains(target)) {
+      if (
+        target &&
+        (containerRef.current?.contains(target) || additionalInsideRef?.current?.contains(target))
+      ) {
         return;
       }
       onClose();
@@ -41,5 +46,5 @@ export function useDismissibleMenu({
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [closeOnEscape, containerRef, isOpen, onClose]);
+  }, [additionalInsideRef, closeOnEscape, containerRef, isOpen, onClose]);
 }
