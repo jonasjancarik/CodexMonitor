@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ComposerModelGrid } from "./ComposerModelGrid";
 import { parseModelListResponse } from "@/features/models/utils/modelListResponse";
+import { DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS } from "@/features/models/utils/modelPickerPresets";
 import { modelSupportsFastServiceTier } from "@/features/models/utils/serviceTiers";
 
 const models = parseModelListResponse({ data: [{
@@ -71,4 +72,24 @@ it("offers GPT-6 Sol and Luna in both picker views using advertised efforts", ()
   fireEvent.click(within(container).getByRole("radio", { name: "GPT-6 Sol, Max reasoning" }));
   expect(onSelect).toHaveBeenCalledWith("gpt-6-sol", "max");
   expect(within(container).queryByRole("button", { name: /Older models/ })).toBeNull();
+});
+
+it("selects Sol 6.1 from the new defaults without showing retired models", () => {
+  const available = parseModelListResponse({ data: [
+    "gpt-5.5", "gpt-5.6-sol", "gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna", "gpt-6-astra",
+  ].map((model) => ({
+    id: `provider-${model}`, model, displayName: model,
+    supportedReasoningEfforts: ["medium", "high"].map(
+      reasoningEffort => ({ reasoningEffort, description: "" }),
+    ),
+    defaultReasoningEffort: "medium",
+  })) });
+  const onSelect = vi.fn();
+  const { container } = render(<ComposerModelGrid {...props} models={available}
+    mode="simplified" simplifiedPresetIds={[...DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS]}
+    selectedModelId="provider-gpt-6-luna" onSelect={onSelect} />);
+  const slider = within(container).getByRole("slider");
+  expect(slider.getAttribute("max")).toBe("2");
+  fireEvent.change(slider, { target: { value: "1" } });
+  expect(onSelect).toHaveBeenCalledWith("provider-gpt-6.1-sol", "medium", false);
 });

@@ -111,17 +111,9 @@ const baseSettings: AppSettings = {
   composerModelPickerMode: "simplified",
   composerModelRecommendationHighlightsEnabled: true,
   composerSimplifiedModelPresets: [
-    "luna:low",
-    "luna:medium",
-    "luna:high",
-    "luna:xhigh",
-    "luna:max",
-    "sol:medium",
-    "terra:max",
-    "sol:xhigh",
     "gpt-6-luna:medium",
-    "gpt-6-sol:medium",
-    "sol:ultra",
+    "gpt-6.1-sol:medium",
+    "astra:medium",
   ],
   uiScale: 1,
   theme: "system",
@@ -1858,7 +1850,7 @@ describe("SettingsView Composer", () => {
     renderComposerSection({ onUpdateAppSettings });
 
     fireEvent.click(screen.getByRole("checkbox", { name: /GPT-5.6 Sol · High/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Reset to recommended" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset to defaults" }));
 
     await waitFor(() => {
       expect(onUpdateAppSettings).toHaveBeenCalledWith(
@@ -1869,9 +1861,9 @@ describe("SettingsView Composer", () => {
       expect(onUpdateAppSettings).toHaveBeenLastCalledWith(
         expect.objectContaining({
           composerSimplifiedModelPresets: expect.arrayContaining([
-            "luna:low",
-            "terra:max",
-            "sol:ultra",
+            "gpt-6-luna:medium",
+            "gpt-6.1-sol:medium",
+            "astra:medium",
           ]),
         }),
       );

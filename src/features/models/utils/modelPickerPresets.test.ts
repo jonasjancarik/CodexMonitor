@@ -8,7 +8,7 @@ import {
 } from "./modelPickerPresets";
 
 describe("normalizeSimplifiedModelPresetIds", () => {
-  it("uses the recommendation-based defaults for missing or empty values", () => {
+  it("uses the current-model defaults for missing or empty values", () => {
     expect(normalizeSimplifiedModelPresetIds(undefined)).toEqual(
       DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS,
     );
@@ -51,7 +51,7 @@ it("recognizes Astra presets without inventing benchmark recommendations", () =>
 });
 
 it("matches GPT-6 Sol and Luna presets to their exact models", () => {
-  const models = ["gpt-5.6-sol", "gpt-6-sol", "gpt-5.6-luna", "gpt-6-luna"].map((model) => ({
+  const models = ["gpt-5.6-sol", "gpt-6-sol", "gpt-6.1-sol", "gpt-5.6-luna", "gpt-6-luna"].map((model) => ({
     id: `provider-${model}`,
     model,
     displayName: model,
@@ -61,13 +61,31 @@ it("matches GPT-6 Sol and Luna presets to their exact models", () => {
     isDefault: false,
   }));
 
-  for (const family of ["gpt-6-sol", "gpt-6-luna"] as const) {
+  for (const family of ["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"] as const) {
     const option = getModelPickerPreset(`${family}:medium`)!;
-    expect(option.label).toBe(`GPT-6 ${family === "gpt-6-sol" ? "Sol" : "Luna"} · Medium`);
+    expect(option.label).toBe(`${family === "gpt-6.1-sol" ? "GPT-6.1 Sol" : family === "gpt-6-sol" ? "GPT-6 Sol" : "GPT-6 Luna"} · Medium`);
     expect(option.score).toBeNull();
     expect(option.recommended).toBe(false);
     expect(findModelForPreset(models, option)?.model).toBe(family);
-    expect(DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS).toContain(option.id);
+
   }
   expect(findModelForPreset(models, getModelPickerPreset("sol:medium")!)?.model).toBe("gpt-5.6-sol");
+});
+
+it("defaults to current models and migrates only the previous default selection", () => {
+  expect(DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS).toEqual([
+    "gpt-6-luna:medium", "gpt-6.1-sol:medium", "astra:medium",
+  ]);
+  const previousDefaults = [
+    "luna:low", "luna:medium", "luna:high", "luna:xhigh", "luna:max",
+    "sol:medium", "terra:max", "sol:xhigh", "gpt-6-luna:medium",
+    "gpt-6-sol:medium", "sol:ultra",
+  ];
+  expect(normalizeSimplifiedModelPresetIds(previousDefaults.reverse())).toEqual(
+    DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS,
+  );
+  expect(normalizeSimplifiedModelPresetIds([...previousDefaults, "sol:high"]))
+    .toContain("sol:high");
+  expect(normalizeSimplifiedModelPresetIds(["gpt-6-sol:medium"]))
+    .toEqual(["gpt-6-sol:medium"]);
 });

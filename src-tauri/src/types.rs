@@ -1183,17 +1183,9 @@ fn default_true() -> bool {
 
 fn default_composer_simplified_model_presets() -> Vec<String> {
     [
-        "luna:low",
-        "luna:medium",
-        "luna:high",
-        "luna:xhigh",
-        "luna:max",
-        "sol:medium",
-        "terra:max",
-        "sol:xhigh",
         "gpt-6-luna:medium",
-        "gpt-6-sol:medium",
-        "sol:ultra",
+        "gpt-6.1-sol:medium",
+        "astra:medium",
     ]
     .into_iter()
     .map(str::to_string)

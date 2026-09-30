@@ -7,7 +7,7 @@ import {
 
 export type ModelPickerPreset = {
   id: string;
-  family: RecommendedModelFamily | "gpt-6-luna" | "gpt-6-sol";
+  family: RecommendedModelFamily | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol";
   effort: string;
   label: string;
   score: number | null;
@@ -23,8 +23,12 @@ const preset = (
   id: `${family}:${effort}`,
   family,
   effort,
-  label: `GPT-${family.startsWith("gpt-6-") || family === "astra" ? "6" : "5.6"} ${
-    (family.startsWith("gpt-6-") ? family.slice(6) : family).replace(/^./, (letter) => letter.toUpperCase())
+  label: `${
+    family.startsWith("gpt-")
+      ? family.replace(/^gpt-(\d+(?:\.\d+)?)-(.+)$/, (_, version, name: string) =>
+          `GPT-${version} ${name.charAt(0).toUpperCase() + name.slice(1)}`,
+        )
+      : `GPT-${family === "astra" ? "6" : "5.6"} ${family.charAt(0).toUpperCase() + family.slice(1)}`
   } · ${
     effort === "xhigh"
       ? "Extra High"
@@ -60,6 +64,9 @@ export const MODEL_PICKER_PRESET_CATALOG: readonly ModelPickerPreset[] = [
   ...["none", "low", "medium", "high", "xhigh", "max"].map((effort) =>
     preset("gpt-6-sol", effort, null, false),
   ),
+  ...["none", "low", "medium", "high", "xhigh", "max"].map((effort) =>
+    preset("gpt-6.1-sol", effort, null, false),
+  ),
   // Astra has no comparable benchmark scores in the recommendation source.
   preset("astra", "low", null, false),
   preset("astra", "medium", null, false),
@@ -71,10 +78,11 @@ export const MODEL_PICKER_PRESET_CATALOG: readonly ModelPickerPreset[] = [
   preset("sol", "ultra", null, false),
   preset("gpt-6-luna", "ultra", null, false),
   preset("gpt-6-sol", "ultra", null, false),
+  preset("gpt-6.1-sol", "ultra", null, false),
   preset("astra", "ultra", null, false),
 ];
 
-export const DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS = [
+const LEGACY_DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS = [
   "luna:low",
   "luna:medium",
   "luna:high",
@@ -86,6 +94,12 @@ export const DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS = [
   "gpt-6-luna:medium",
   "gpt-6-sol:medium",
   "sol:ultra",
+] as const;
+
+export const DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS = [
+  "gpt-6-luna:medium",
+  "gpt-6.1-sol:medium",
+  "astra:medium",
 ] as const;
 
 const presetById = new Map(
@@ -103,6 +117,13 @@ export function normalizeSimplifiedModelPresetIds(value: unknown): string[] {
         typeof entry === "string" && presetById.has(entry),
     ),
   );
+  // Upgrade untouched defaults while preserving explicit custom selections.
+  if (
+    selected.size === LEGACY_DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS.length &&
+    LEGACY_DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS.every((id) => selected.has(id))
+  ) {
+    return [...DEFAULT_SIMPLIFIED_MODEL_PRESET_IDS];
+  }
   const normalized = MODEL_PICKER_PRESET_CATALOG.filter((entry) =>
     selected.has(entry.id),
   ).map((entry) => entry.id);
@@ -122,7 +143,7 @@ export function findModelForPreset(
 ): ModelOption | null {
   return (
     models.find((model) =>
-      preset.family.startsWith("gpt-6-")
+      preset.family.startsWith("gpt-")
         ? model.model.toLowerCase() === preset.family
         : getRecommendedModelFamily(model) === preset.family,
     ) ??
